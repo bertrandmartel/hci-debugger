@@ -24,13 +24,23 @@
 package fr.bmartel.bluetooth.hcidebugger;
 
 import android.app.Activity;
+import android.bluetooth.BluetoothAdapter;
+import android.bluetooth.BluetoothDevice;
+import android.bluetooth.BluetoothManager;
+import android.content.BroadcastReceiver;
+import android.content.Context;
+import android.content.Intent;
+import android.content.IntentFilter;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
 import android.view.Window;
 import android.widget.AdapterView;
+import android.widget.Button;
 import android.widget.ListView;
+import android.widget.TextView;
 
+import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
@@ -42,6 +52,7 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
@@ -72,6 +83,36 @@ public class HciDebuggerActivity extends Activity {
 
     private PacketAdapter packetAdapter;
 
+    private ExecutorService pool = Executors.newFixedThreadPool(1);
+
+    private BluetoothAdapter mBluetoothAdapter = null;
+
+    private boolean mScanning;
+
+    private final static int REQUEST_ENABLE_BT = 1;
+
+    private Button bluetoothStateBtn;
+
+    private Runnable decodingTask = new Runnable() {
+        @Override
+        public void run() {
+
+            String filePath = getHciLogFilePath();
+
+            File file = new File(filePath);
+            if (!file.exists()) {
+                Log.e(TAG, "HCI file is specified but is not present in filesystem. Check in Developper Section that btsnoop file log is activated");
+                return;
+            }
+
+            if (!filePath.equals("")) {
+                startHciLogStream(filePath);
+            } else {
+                Log.e(TAG, "HCI file path not specified in " + BT_CONFIG);
+            }
+        }
+    };
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
 
@@ -79,6 +120,18 @@ public class HciDebuggerActivity extends Activity {
         super.onCreate(savedInstanceState);
         requestWindowFeature(Window.FEATURE_NO_TITLE);
         setContentView(R.layout.debugger_activity);
+
+        // Initializes Bluetooth adapter.
+        final BluetoothManager bluetoothManager = (BluetoothManager) getSystemService(Context.BLUETOOTH_SERVICE);
+
+        mBluetoothAdapter = bluetoothManager.getAdapter();
+
+        // Ensures Bluetooth is available on the device and it is enabled. If not,
+        // displays a dialog requesting user permission to enable Bluetooth.
+        if (mBluetoothAdapter == null || !mBluetoothAdapter.isEnabled()) {
+            Intent enableBtIntent = new Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE);
+            startActivityForResult(enableBtIntent, REQUEST_ENABLE_BT);
+        }
 
         packetListView = (ListView) findViewById(R.id.packet_list);
 
@@ -98,28 +151,131 @@ public class HciDebuggerActivity extends Activity {
             }
         });
 
-        ExecutorService pool = Executors.newFixedThreadPool(1);
-
-        pool.execute(new Runnable() {
+        Button clear_button = (Button) findViewById(R.id.clear_button);
+        clear_button.setOnClickListener(new View.OnClickListener() {
             @Override
-            public void run() {
+            public void onClick(View v) {
+                Log.v(TAG, "clearing adapter");
+                runOnUiThread(new Runnable() {
+                    @Override
+                    public void run() {
+                        packetAdapter.clear();
+                        notifyAdapter();
+                    }
+                });
+            }
+        });
 
-                String filePath = getHciLogFilePath();
+        Button refresh_button = (Button) findViewById(R.id.refresh_button);
+        refresh_button.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                Log.v(TAG, "refreshing adapter");
+                packetAdapter.clear();
+                notifyAdapter();
+                frameCount = 1;
+                stopHciLogStream();
+                pool.execute(decodingTask);
+            }
+        });
 
-                File file = new File(filePath);
-                if (!file.exists()) {
-                    Log.e(TAG, "HCI file is specified but is not present in filesystem. Check in Developper Section that btsnoop file log is activated");
-                    return;
-                }
-
-                if (!filePath.equals("")) {
-                    startHciLogStream(filePath);
+        final Button scan_button = (Button) findViewById(R.id.scan_button);
+        scan_button.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                if (!mScanning) {
+                    Log.v(TAG, "starting scan");
+                    mScanning = true;
+                    mBluetoothAdapter.startLeScan(mLeScanCallback);
+                    scan_button.setText("stop scan");
                 } else {
-                    Log.e(TAG, "HCI file path not specified in " + BT_CONFIG);
+                    Log.v(TAG, "stopping scan");
+                    mBluetoothAdapter.stopLeScan(mLeScanCallback);
+                    mScanning = false;
+                    scan_button.setText("start scan");
                 }
             }
         });
+
+        bluetoothStateBtn = (Button) findViewById(R.id.enable_bluetooth);
+
+        if (mBluetoothAdapter.isEnabled()) {
+            bluetoothStateBtn.setText("disable BT");
+        } else {
+            bluetoothStateBtn.setText("enable BT");
+        }
+
+        bluetoothStateBtn.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+
+                if (mBluetoothAdapter.isEnabled()) {
+                    setBluetooth(false);
+                } else {
+                    setBluetooth(true);
+                }
+            }
+        });
+
+        Button filter_button = (Button) findViewById(R.id.filter_button);
+        filter_button.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                Log.v(TAG, "setting filter");
+            }
+        });
+
+        IntentFilter intentFilter = new IntentFilter();
+        intentFilter.addAction(BluetoothAdapter.ACTION_STATE_CHANGED);
+
+        registerReceiver(bluetoothBroadcastReceiver, intentFilter);
+
+        pool.execute(decodingTask);
     }
+
+    private final BroadcastReceiver bluetoothBroadcastReceiver = new BroadcastReceiver() {
+        @Override
+        public void onReceive(Context context, Intent intent) {
+
+            final String action = intent.getAction();
+
+            if (action.equals(BluetoothAdapter.ACTION_STATE_CHANGED)) {
+
+                final int state = intent.getIntExtra(BluetoothAdapter.EXTRA_STATE,
+                        BluetoothAdapter.ERROR);
+
+                if (state == BluetoothAdapter.STATE_OFF) {
+
+                    Log.e(TAG, "Bluetooth state change to STATE_OFF");
+                    bluetoothStateBtn.setText("enable BT");
+
+                } else if (state == BluetoothAdapter.STATE_ON) {
+                    Log.e(TAG, "Bluetooth state change to STATE_ON");
+                    bluetoothStateBtn.setText("disable BT");
+
+                }
+            }
+        }
+    };
+
+    private boolean setBluetooth(boolean state) {
+
+        boolean isEnabled = mBluetoothAdapter.isEnabled();
+        Log.i(TAG, "Setting bluetooth " + isEnabled + " : " + state);
+        if (!isEnabled && state) {
+            return mBluetoothAdapter.enable();
+        } else if (isEnabled && !state) {
+            return mBluetoothAdapter.disable();
+        }
+        return false;
+    }
+
+    private BluetoothAdapter.LeScanCallback mLeScanCallback = new BluetoothAdapter.LeScanCallback() {
+        @Override
+        public void onLeScan(final BluetoothDevice device, int rssi, byte[] scanRecord) {
+
+        }
+    };
 
     @Override
     protected void onResume() {
@@ -138,6 +294,8 @@ public class HciDebuggerActivity extends Activity {
     protected void onDestroy() {
         super.onDestroy();
         Log.v(TAG, "onDestroy()");
+        frameCount = 1;
+        unregisterReceiver(bluetoothBroadcastReceiver);
         stopHciLogStream();
     }
 
@@ -176,7 +334,7 @@ public class HciDebuggerActivity extends Activity {
     }
 
     public void onHciFrameReceived(String snoopFrame, String hciFrame) {
-
+        //Log.v(TAG, "new frame | SNOOP : " + snoopFrame + " | HCI : " + hciFrame);
         try {
             JSONObject snoopJson = new JSONObject(snoopFrame);
 
@@ -196,7 +354,7 @@ public class HciDebuggerActivity extends Activity {
             JSONObject parameters = null;
 
             if (hciJson.has("parameters"))
-                hciJson.getJSONObject("parameters");
+                parameters = hciJson.getJSONObject("parameters");
 
             final PacketDest finalDest = dest;
 
@@ -205,11 +363,47 @@ public class HciDebuggerActivity extends Activity {
                 JSONObject event_code = hciJson.getJSONObject("event_code");
                 final ValuePair eventType = new ValuePair(event_code.getInt("code"), event_code.getString("value"));
 
+                if (hciJson.has("subevent_code")) {
+
+                    JSONObject subevent_code = hciJson.getJSONObject("subevent_code");
+                    final ValuePair subevent_code_val = new ValuePair(subevent_code.getInt("code"), subevent_code.getString("value"));
+
+                    if (subevent_code_val.getCode() == 2) {
+
+                        if (parameters != null && parameters.has("reports")) {
+
+                            JSONArray reports = parameters.getJSONArray("reports");
+
+                            final List<AdvertizingReport> reportList = new ArrayList<>();
+
+                            for (int i = 0; i < reports.length(); i++) {
+
+                                JSONObject reportItem = reports.getJSONObject(i);
+                                reportList.add(new AdvertizingReport(reportItem.getString("address"),
+                                        reportItem.getInt("address_type"),
+                                        reportItem.getJSONArray("data"),
+                                        reportItem.getInt("data_length"),
+                                        reportItem.getInt("event_type"),
+                                        reportItem.getInt("rssi")));
+                            }
+                            runOnUiThread(new Runnable() {
+                                @Override
+                                public void run() {
+                                    packetAdapter.insert(new PacketHciLEAdvertizing(frameCount++, timestamp, finalDest, type, eventType, subevent_code_val, reportList), 0);
+                                    notifyAdapter();
+                                }
+                            });
+
+                            return;
+                        }
+                    }
+                }
+
                 runOnUiThread(new Runnable() {
                     @Override
                     public void run() {
                         packetAdapter.insert(new PacketHciEvent(frameCount++, timestamp, finalDest, type, eventType), 0);
-                        packetAdapter.notifyDataSetChanged();
+                        notifyAdapter();
                     }
                 });
 
@@ -232,7 +426,7 @@ public class HciDebuggerActivity extends Activity {
                     @Override
                     public void run() {
                         packetAdapter.insert(new PacketHciCmd(frameCount++, timestamp, finalDest, type, ocf, ogf), 0);
-                        packetAdapter.notifyDataSetChanged();
+                        notifyAdapter();
                     }
                 });
             } else if (type.getCode() == 2) {
@@ -241,7 +435,7 @@ public class HciDebuggerActivity extends Activity {
                     @Override
                     public void run() {
                         packetAdapter.insert(new PacketHciAclData(frameCount++, timestamp, finalDest, type), 0);
-                        packetAdapter.notifyDataSetChanged();
+                        notifyAdapter();
                     }
                 });
 
@@ -251,7 +445,7 @@ public class HciDebuggerActivity extends Activity {
                     @Override
                     public void run() {
                         packetAdapter.insert(new PacketHciScoData(frameCount++, timestamp, finalDest, type), 0);
-                        packetAdapter.notifyDataSetChanged();
+                        notifyAdapter();
                     }
                 });
 
@@ -259,8 +453,18 @@ public class HciDebuggerActivity extends Activity {
 
         } catch (JSONException e) {
             e.printStackTrace();
-            Log.v(TAG, "new frame | SNOOP : " + snoopFrame + " | HCI : " + hciFrame);
+            //Log.v(TAG, "new frame | SNOOP : " + snoopFrame + " | HCI : " + hciFrame);
         }
 
+    }
+
+    /**
+     * Edit frame count text view and refresh adapter
+     */
+    private void notifyAdapter() {
+
+        TextView frameCountView = (TextView) findViewById(R.id.filter_count);
+        frameCountView.setText(packetAdapter.getCount() + " /" + (frameCount - 1));
+        packetAdapter.notifyDataSetChanged();
     }
 }

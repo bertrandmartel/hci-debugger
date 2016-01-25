@@ -1,15 +1,81 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:orientation="vertical"
-    android:theme="@style/CustomActivityThemeNoActionBar">
+    android:orientation="horizontal">
 
-    <ListView
-        android:id="@+id/packet_list"
+    <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+        android:id="@+id/top_menu"
         android:layout_width="match_parent"
-        android:layout_height="match_parent">
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:padding="5dp"
+        android:theme="@style/CustomActivityThemeNoActionBar">
 
-    </ListView>
+        <TextView
+            android:id="@+id/filter_count"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="0.2"
+            android:text=""
+            android:textAlignment="center"
+            android:textColor="@android:color/white"
+            android:textStyle="bold" />
 
-</LinearLayout>
+
+        <Button
+            android:id="@+id/clear_button"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_toRightOf="@id/filter_count"
+            android:layout_weight="0.2"
+            android:text="clear" />
+
+        <Button
+            android:id="@+id/refresh_button"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_toRightOf="@id/filter_count"
+            android:layout_weight="0.2"
+            android:text="refresh" />
+
+        <Button
+            android:id="@+id/scan_button"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_toRightOf="@id/filter_count"
+            android:layout_weight="0.2"
+            android:text="start scan" />
+
+        <Button
+            android:id="@+id/enable_bluetooth"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_toRightOf="@id/filter_count"
+            android:layout_weight="0.2"
+            android:text="disable BT" />
+
+        <Button
+            android:id="@+id/filter_button"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_toRightOf="@id/filter_count"
+            android:layout_weight="0.2"
+            android:text="filter" />
+
+    </LinearLayout>
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:layout_below="@+id/top_menu"
+        android:orientation="horizontal">
+
+        <ListView
+            android:id="@+id/packet_list"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent">
+
+        </ListView>
+    </LinearLayout>
+</RelativeLayout>

@@ -93,8 +93,10 @@ JNIEXPORT void JNICALL Java_fr_bmartel_bluetooth_hcidebugger_HciDebuggerActivity
 {
 	__android_log_print(ANDROID_LOG_VERBOSE,"stopHciLogStream","stopping thread\n");
 	
-	if (parser_ptr!=0)
+	if (parser_ptr!=0){
 		parser_ptr->stop();
+		parser_ptr->clearListeners();
+	}
 }
 }
 

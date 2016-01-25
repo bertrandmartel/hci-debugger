@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string-array name="ogf_array">
+        <item>Choose</item>
+        <item>LINK_CONTROL_COMMANDS</item>
+        <item>LINK_POLICY_COMMANDS</item>
+        <item>CONTROLLER_BASEBAND_COMMANDS</item>
+        <item>INFORMATIONAL_PARAMETERS</item>
+        <item>STATUS_PARAMETERS</item>
+        <item>TESTING_COMMANDS</item>
+        <item>LE_CONTROLLER_COMMANDS</item>
+        <item>VENDOR_SPECIFIC</item>
+    </string-array>
+</resources>

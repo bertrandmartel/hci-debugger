@@ -74,8 +74,37 @@
         <ListView
             android:id="@+id/packet_list"
             android:layout_width="match_parent"
-            android:layout_height="match_parent">
+            android:layout_height="match_parent"
+            android:listSelector="@drawable/selection_effect"></ListView>
 
-        </ListView>
     </LinearLayout>
+
+    <ImageButton
+        android:id="@+id/hci_frame_orb"
+        style="@style/AppTheme"
+        android:layout_width="60dp"
+        android:layout_height="60dp"
+        android:layout_alignParentBottom="true"
+        android:layout_alignParentRight="true"
+        android:layout_gravity="bottom|right"
+        android:layout_marginBottom="16dp"
+        android:layout_marginRight="16dp"
+        android:background="@drawable/circle"
+        android:elevation="10dp"
+        android:text="New Button" />
+
+    <ImageButton
+        android:id="@+id/snoop_frame_orb"
+        style="@style/AppTheme"
+        android:layout_width="60dp"
+        android:layout_height="60dp"
+        android:layout_alignParentBottom="true"
+        android:layout_alignParentRight="true"
+        android:layout_gravity="bottom|right"
+        android:layout_marginBottom="16dp"
+        android:layout_marginRight="92dp"
+        android:background="@drawable/circle2"
+        android:elevation="10dp"
+        android:text="New Button" />
+
 </RelativeLayout>

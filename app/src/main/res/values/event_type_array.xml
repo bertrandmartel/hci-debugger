@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string-array name="event_type_array">
+        <item>Choose</item>
+        <item>DISCONNECTION_COMPLETE</item>
+        <item>NUMBER_OF_COMPLETED_PACKET</item>
+        <item>COMMAND_COMPLETE</item>
+        <item>EXTENDED_INQUIRY_RESULT</item>
+        <item>INQUIRY_COMPLETE</item>
+        <item>COMMAND_STATUS</item>
+        <item>LE_META</item>
+    </string-array>
+</resources>

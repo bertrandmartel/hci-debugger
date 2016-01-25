@@ -24,20 +24,29 @@
 package fr.bmartel.bluetooth.hcidebugger;
 
 import android.app.Activity;
+import android.app.AlertDialog;
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothManager;
 import android.content.BroadcastReceiver;
 import android.content.Context;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.content.SharedPreferences;
 import android.os.Bundle;
+import android.text.Editable;
+import android.text.TextWatcher;
 import android.util.Log;
+import android.view.LayoutInflater;
 import android.view.View;
 import android.view.Window;
 import android.widget.AdapterView;
+import android.widget.ArrayAdapter;
 import android.widget.Button;
+import android.widget.EditText;
 import android.widget.ListView;
+import android.widget.Spinner;
 import android.widget.TextView;
 
 import org.json.JSONArray;
@@ -93,6 +102,23 @@ public class HciDebuggerActivity extends Activity {
 
     private Button bluetoothStateBtn;
 
+    private boolean isFiltered = false;
+
+    private List<Packet> packetList = new ArrayList<>();
+    private List<Packet> packetFilteredList = new ArrayList<>();
+
+    private Filters filters = new Filters("", "", "", "", "");
+
+    private final static String PREFERENCES = "filters";
+
+    private String packetTypeFilter = "packetTypeFilter";
+    private String eventTypeFilter = "eventTypeFilter";
+    private String ogfFilter = "ogfFilter";
+    private String subeventFilter = "subeventFilter";
+    private String advertizingAddr = "advertizingAddr";
+
+    private int selectedPacket = -1;
+
     private Runnable decodingTask = new Runnable() {
         @Override
         public void run() {
@@ -101,17 +127,50 @@ public class HciDebuggerActivity extends Activity {
 
             File file = new File(filePath);
             if (!file.exists()) {
-                Log.e(TAG, "HCI file is specified but is not present in filesystem. Check in Developper Section that btsnoop file log is activated");
+                showWarningDialog("HCI file is specified but is not present in filesystem. Check in Developper Section that btsnoop file log is activated");
                 return;
             }
 
             if (!filePath.equals("")) {
                 startHciLogStream(filePath);
             } else {
-                Log.e(TAG, "HCI file path not specified in " + BT_CONFIG);
+                showWarningDialog("HCI file path not specified in " + BT_CONFIG);
             }
         }
     };
+
+    private void showWarningDialog(final String message) {
+
+        runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+
+                DialogInterface.OnClickListener dialogClickListener = new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialog, int which) {
+                        switch (which) {
+                            case DialogInterface.BUTTON_POSITIVE:
+                                dialog.cancel();
+                                dialog.dismiss();
+                                finish();
+                                break;
+
+                            case DialogInterface.BUTTON_NEGATIVE:
+                                pool.execute(decodingTask);
+                                break;
+                        }
+                    }
+                };
+
+                AlertDialog.Builder builder = new AlertDialog.Builder(HciDebuggerActivity.this);
+
+                builder.setCancelable(false);
+                builder.setMessage(message).setPositiveButton("exit", dialogClickListener)
+                        .setNegativeButton("retry", dialogClickListener).show();
+            }
+        });
+
+    }
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -120,6 +179,14 @@ public class HciDebuggerActivity extends Activity {
         super.onCreate(savedInstanceState);
         requestWindowFeature(Window.FEATURE_NO_TITLE);
         setContentView(R.layout.debugger_activity);
+
+        SharedPreferences prefs = getSharedPreferences(PREFERENCES, MODE_PRIVATE);
+
+        filters.setPacketType(prefs.getString("packetTypeFilter", ""));
+        filters.setEventType(prefs.getString("eventTypeFilter", ""));
+        filters.setOgf(prefs.getString("ogfFilter", ""));
+        filters.setSubEventType(prefs.getString("subeventFilter", ""));
+        filters.setAddress(prefs.getString("advertizingAddr", ""));
 
         // Initializes Bluetooth adapter.
         final BluetoothManager bluetoothManager = (BluetoothManager) getSystemService(Context.BLUETOOTH_SERVICE);
@@ -135,12 +202,13 @@ public class HciDebuggerActivity extends Activity {
 
         packetListView = (ListView) findViewById(R.id.packet_list);
 
-        final ArrayList<Packet> list = new ArrayList<>();
+        packetList = new ArrayList<>();
 
         packetAdapter = new PacketAdapter(HciDebuggerActivity.this,
-                R.layout.packet_item, list);
+                R.layout.packet_item, packetList);
 
         packetListView.setAdapter(packetAdapter);
+        packetListView.setSelector(R.drawable.selection_effect);
 
         packetListView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
             @Override
@@ -148,6 +216,18 @@ public class HciDebuggerActivity extends Activity {
 
                 final Packet item = (Packet) parent.getItemAtPosition(position);
 
+                if (selectedPacket != item.getNum()) {
+                    selectedPacket = item.getNum();
+                    Log.i(TAG,"?");
+                    packetListView.setItemChecked(position,true);
+                    //view.setSelected(true);
+                } else {
+                    Log.i(TAG,"??");
+                    packetListView.setItemChecked(position,false);
+                    //view.setSelected(false);
+                }
+
+                Log.i(TAG, "item clicked !");
             }
         });
 
@@ -159,6 +239,8 @@ public class HciDebuggerActivity extends Activity {
                 runOnUiThread(new Runnable() {
                     @Override
                     public void run() {
+                        packetList.clear();
+                        packetFilteredList.clear();
                         packetAdapter.clear();
                         notifyAdapter();
                     }
@@ -171,6 +253,8 @@ public class HciDebuggerActivity extends Activity {
             @Override
             public void onClick(View v) {
                 Log.v(TAG, "refreshing adapter");
+                packetList.clear();
+                packetFilteredList.clear();
                 packetAdapter.clear();
                 notifyAdapter();
                 frameCount = 1;
@@ -206,6 +290,7 @@ public class HciDebuggerActivity extends Activity {
         }
 
         bluetoothStateBtn.setOnClickListener(new View.OnClickListener() {
+
             @Override
             public void onClick(View v) {
 
@@ -218,10 +303,125 @@ public class HciDebuggerActivity extends Activity {
         });
 
         Button filter_button = (Button) findViewById(R.id.filter_button);
+
         filter_button.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
+
                 Log.v(TAG, "setting filter");
+                final AlertDialog.Builder dialogBuilder = new AlertDialog.Builder(HciDebuggerActivity.this);
+                dialogBuilder.setCancelable(false);
+
+                LayoutInflater inflater = getLayoutInflater();
+                final View dialogView = inflater.inflate(R.layout.filter_dialog, null);
+                dialogBuilder.setView(dialogView);
+
+                //packet type
+                setupSpinnerAdapter(R.array.packet_type_array, dialogView, R.id.packet_type_filter, filters.getPacketTypeFilter());
+
+                //event type
+                setupSpinnerAdapter(R.array.event_type_array, dialogView, R.id.event_type_filter, filters.getEventTypeFilter());
+
+                //ogf
+                setupSpinnerAdapter(R.array.ogf_array, dialogView, R.id.cmd_ogf_filter, filters.getOgfFilter());
+
+                //subevent_type_filter
+                setupSpinnerAdapter(R.array.subevent_array, dialogView, R.id.subevent_type_filter, filters.getSubeventFilter());
+
+                EditText addressText = (EditText) dialogView.findViewById(R.id.device_address_edit);
+                addressText.addTextChangedListener(new TextWatcher() {
+                    @Override
+                    public void beforeTextChanged(CharSequence s, int start, int count, int after) {
+
+                    }
+
+                    @Override
+                    public void onTextChanged(CharSequence s, int start, int before, int count) {
+
+                        filters.setAddress(s.toString());
+
+                        SharedPreferences.Editor editor = getSharedPreferences(PREFERENCES, MODE_PRIVATE).edit();
+                        editor.putString("advertizingAddr", s.toString());
+                        editor.commit();
+                    }
+
+                    @Override
+                    public void afterTextChanged(Editable s) {
+
+                    }
+                });
+                addressText.setText(filters.getAdvertizingAddr());
+
+                final AlertDialog alertDialog = dialogBuilder.create();
+
+                final Button button_withdraw_filter = (Button) dialogView.findViewById(R.id.button_withdraw_filter);
+
+                if (isFiltered)
+                    button_withdraw_filter.setVisibility(View.VISIBLE);
+                else
+                    button_withdraw_filter.setVisibility(View.GONE);
+
+                button_withdraw_filter.setOnClickListener(new View.OnClickListener() {
+                    @Override
+                    public void onClick(View v) {
+
+                        isFiltered = false;
+                        packetAdapter.setPacketList(packetList);
+                        notifyAdapter();
+
+                        alertDialog.cancel();
+                        alertDialog.dismiss();
+                    }
+                });
+
+                Button button_apply = (Button) dialogView.findViewById(R.id.button_apply_filter);
+
+                button_apply.setOnClickListener(new View.OnClickListener() {
+                    @Override
+                    public void onClick(View v) {
+
+                        Spinner packet_type_filter = (Spinner) dialogView.findViewById(R.id.packet_type_filter);
+                        Spinner ogf_filter = (Spinner) dialogView.findViewById(R.id.cmd_ogf_filter);
+                        Spinner event_type_filter = (Spinner) dialogView.findViewById(R.id.event_type_filter);
+                        Spinner subevent_type_filter = (Spinner) dialogView.findViewById(R.id.subevent_type_filter);
+                        EditText device_address_edit = (EditText) dialogView.findViewById(R.id.device_address_edit);
+
+                        filters = new Filters(packet_type_filter.getSelectedItem().toString(),
+                                event_type_filter.getSelectedItem().toString(),
+                                ogf_filter.getSelectedItem().toString(),
+                                subevent_type_filter.getSelectedItem().toString(),
+                                device_address_edit.getText().toString());
+
+                        packetFilteredList = new ArrayList<Packet>();
+                        for (int i = 0; i < packetList.size(); i++) {
+
+                            if (matchFilter(packetList.get(i))) {
+                                packetFilteredList.add(packetList.get(i));
+                            }
+                        }
+                        Log.i(TAG, "new size : " + packetFilteredList.size());
+
+                        isFiltered = true;
+
+                        packetAdapter.setPacketList(packetFilteredList);
+                        notifyAdapter();
+
+                        alertDialog.cancel();
+                        alertDialog.dismiss();
+                    }
+                });
+
+                Button button_cancel = (Button) dialogView.findViewById(R.id.button_cancel_filter);
+
+                button_cancel.setOnClickListener(new View.OnClickListener() {
+                    @Override
+                    public void onClick(View v) {
+                        alertDialog.cancel();
+                        alertDialog.dismiss();
+                    }
+                });
+
+                alertDialog.show();
             }
         });
 
@@ -233,7 +433,213 @@ public class HciDebuggerActivity extends Activity {
         pool.execute(decodingTask);
     }
 
+    private boolean matchFilter(Packet packet) {
+
+        if (!filters.getPacketTypeFilter().equals("")) {
+
+            if (packet.getType().getValue().contains(filters.getPacketTypeFilter())) {
+
+                if (filters.getPacketTypeFilter().equals("COMMAND")) {
+
+                    PacketHciCmd cmd = (PacketHciCmd) packet;
+
+                    if (!filters.getOgfFilter().equals("")) {
+
+                        if (cmd.getOgf().getValue().contains(filters.getOgfFilter())) {
+                            return true;
+                        } else {
+                            return false;
+                        }
+
+                    } else {
+                        return true;
+                    }
+                } else if (filters.getPacketTypeFilter().equals("EVENT")) {
+
+                    PacketHciEvent event = (PacketHciEvent) packet;
+
+                    if (!filters.getEventTypeFilter().equals("")) {
+
+                        if (event.getEventType().getValue().contains(filters.getEventTypeFilter())) {
+
+                            if (!filters.getSubeventFilter().equals("") && filters.getEventTypeFilter().equals("LE_META")) {
+
+                                PacketHciEventLEMeta leMeta = (PacketHciEventLEMeta) packet;
+
+                                if (!filters.getSubeventFilter().equals("")) {
+
+                                    if (leMeta.getSubevent().getValue().contains(filters.getSubeventFilter())) {
+
+                                        if (filters.getSubeventFilter().equals("ADVERTISING_REPORT")) {
+
+                                            if (!filters.getAdvertizingAddr().equals("")) {
+
+                                                PacketHciLEAdvertizing adReportFrame = (PacketHciLEAdvertizing) packet;
+
+                                                for (int i = 0; i < adReportFrame.getReports().size(); i++) {
+                                                    if (adReportFrame.getReports().get(i).getAddress().toLowerCase().equals(filters.getAdvertizingAddr().toLowerCase())) {
+                                                        return true;
+                                                    }
+                                                }
+                                                return false;
+
+                                            } else {
+                                                return true;
+                                            }
+
+                                        } else {
+                                            return true;
+                                        }
+
+                                    } else {
+                                        return false;
+                                    }
+
+                                } else {
+                                    return true;
+                                }
+
+                            } else {
+                                return true;
+                            }
+
+                        } else {
+                            return false;
+                        }
+
+                    } else {
+                        return true;
+                    }
+                }
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private void setupSpinnerAdapter(final int ressourceId, final View view, int spinnerId, String value) {
+
+        ArrayAdapter<CharSequence> adapter = ArrayAdapter.createFromResource(HciDebuggerActivity.this,
+                ressourceId, android.R.layout.simple_spinner_item);
+
+        adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+        final Spinner sItems = (Spinner) view.findViewById(spinnerId);
+        sItems.setAdapter(adapter);
+
+        sItems.setSelection(getIndex(sItems, value));
+
+        sItems.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
+
+            @Override
+            public void onItemSelected(AdapterView<?> parent, View view2, int position, long id) {
+
+                Log.i(TAG, "position : " + sItems.getSelectedItem());
+
+                if (!sItems.getSelectedItem().toString().equals("Choose")) {
+
+                    SharedPreferences.Editor editor = getSharedPreferences(PREFERENCES, MODE_PRIVATE).edit();
+
+                    if (ressourceId == R.array.packet_type_array) {
+
+                        if (sItems.getSelectedItem().toString().equals("EVENT")) {
+                            displayEventSpinner(view);
+                        } else {
+                            displayCmdSpinner(view);
+                        }
+                        filters.setPacketType(sItems.getSelectedItem().toString());
+
+                        editor.putString("packetTypeFilter", sItems.getSelectedItem().toString());
+                        editor.commit();
+
+                    } else if (ressourceId == R.array.event_type_array) {
+
+                        if (sItems.getSelectedItem().toString().equals("LE_META")) {
+                            displaySubEventSpinner(view);
+                        }
+
+                        filters.setEventType(sItems.getSelectedItem().toString());
+
+                        editor.putString("eventTypeFilter", sItems.getSelectedItem().toString());
+                        editor.commit();
+
+                    } else if (ressourceId == R.array.ogf_array) {
+
+                        filters.setOgf(sItems.getSelectedItem().toString());
+
+                        editor.putString("ogfFilter", sItems.getSelectedItem().toString());
+                        editor.commit();
+
+                    } else if (ressourceId == R.array.subevent_array) {
+
+                        if (sItems.getSelectedItem().toString().equals("ADVERTISING_REPORT")) {
+                            displayAdvertizingReportFilter(view);
+                        }
+
+                        filters.setSubEventType(sItems.getSelectedItem().toString());
+
+                        editor.putString("subeventFilter", sItems.getSelectedItem().toString());
+                        editor.commit();
+                    }
+                }
+            }
+
+            @Override
+            public void onNothingSelected(AdapterView<?> parent) {
+
+            }
+        });
+    }
+
+    private int getIndex(Spinner spinner, String myString) {
+
+        int index = 0;
+
+        for (int i = 0; i < spinner.getCount(); i++) {
+            if (spinner.getItemAtPosition(i).equals(myString)) {
+                index = i;
+            }
+        }
+        return index;
+    }
+
+    private void displayEventSpinner(View view) {
+
+        Spinner ogf_filter = (Spinner) view.findViewById(R.id.cmd_ogf_filter);
+        ogf_filter.setVisibility(View.GONE);
+        Spinner event_type_filter = (Spinner) view.findViewById(R.id.event_type_filter);
+        event_type_filter.setVisibility(View.VISIBLE);
+    }
+
+    private void displaySubEventSpinner(View view) {
+        displayEventSpinner(view);
+        Spinner subevent_type_filter = (Spinner) view.findViewById(R.id.subevent_type_filter);
+        subevent_type_filter.setVisibility(View.VISIBLE);
+    }
+
+    private void displayAdvertizingReportFilter(View view) {
+        displaySubEventSpinner(view);
+        TextView device_address_label = (TextView) view.findViewById(R.id.device_address_label);
+        device_address_label.setVisibility(View.VISIBLE);
+        EditText device_address_edit = (EditText) view.findViewById(R.id.device_address_edit);
+        device_address_edit.setVisibility(View.VISIBLE);
+    }
+
+    private void displayCmdSpinner(View view) {
+
+        Spinner ogf_filter = (Spinner) view.findViewById(R.id.cmd_ogf_filter);
+        ogf_filter.setVisibility(View.VISIBLE);
+        Spinner event_type_filter = (Spinner) view.findViewById(R.id.event_type_filter);
+        event_type_filter.setVisibility(View.GONE);
+        Spinner subevent_type_filter = (Spinner) view.findViewById(R.id.subevent_type_filter);
+        subevent_type_filter.setVisibility(View.GONE);
+        TextView device_address_label = (TextView) view.findViewById(R.id.device_address_label);
+        device_address_label.setVisibility(View.GONE);
+        EditText device_address_edit = (EditText) view.findViewById(R.id.device_address_edit);
+        device_address_edit.setVisibility(View.GONE);
+    }
+
     private final BroadcastReceiver bluetoothBroadcastReceiver = new BroadcastReceiver() {
+
         @Override
         public void onReceive(Context context, Intent intent) {
 
@@ -334,7 +740,9 @@ public class HciDebuggerActivity extends Activity {
     }
 
     public void onHciFrameReceived(String snoopFrame, String hciFrame) {
+
         //Log.v(TAG, "new frame | SNOOP : " + snoopFrame + " | HCI : " + hciFrame);
+
         try {
             JSONObject snoopJson = new JSONObject(snoopFrame);
 
@@ -389,7 +797,14 @@ public class HciDebuggerActivity extends Activity {
                             runOnUiThread(new Runnable() {
                                 @Override
                                 public void run() {
-                                    packetAdapter.insert(new PacketHciLEAdvertizing(frameCount++, timestamp, finalDest, type, eventType, subevent_code_val, reportList), 0);
+
+                                    Packet packet = new PacketHciLEAdvertizing(frameCount++, timestamp, finalDest, type, eventType, subevent_code_val, reportList);
+
+                                    packetList.add(0, packet);
+
+                                    if (isFiltered && matchFilter(packet))
+                                        packetFilteredList.add(0, packet);
+
                                     notifyAdapter();
                                 }
                             });
@@ -402,7 +817,14 @@ public class HciDebuggerActivity extends Activity {
                 runOnUiThread(new Runnable() {
                     @Override
                     public void run() {
-                        packetAdapter.insert(new PacketHciEvent(frameCount++, timestamp, finalDest, type, eventType), 0);
+
+                        Packet packet = new PacketHciEvent(frameCount++, timestamp, finalDest, type, eventType);
+
+                        packetList.add(0, packet);
+
+                        if (isFiltered && matchFilter(packet))
+                            packetFilteredList.add(0, packet);
+
                         notifyAdapter();
                     }
                 });
@@ -425,7 +847,14 @@ public class HciDebuggerActivity extends Activity {
                 runOnUiThread(new Runnable() {
                     @Override
                     public void run() {
-                        packetAdapter.insert(new PacketHciCmd(frameCount++, timestamp, finalDest, type, ocf, ogf), 0);
+
+                        Packet packet = new PacketHciCmd(frameCount++, timestamp, finalDest, type, ocf, ogf);
+
+                        packetList.add(0, packet);
+
+                        if (isFiltered && matchFilter(packet))
+                            packetFilteredList.add(0, packet);
+
                         notifyAdapter();
                     }
                 });
@@ -434,7 +863,14 @@ public class HciDebuggerActivity extends Activity {
                 runOnUiThread(new Runnable() {
                     @Override
                     public void run() {
-                        packetAdapter.insert(new PacketHciAclData(frameCount++, timestamp, finalDest, type), 0);
+
+                        Packet packet = new PacketHciAclData(frameCount++, timestamp, finalDest, type);
+
+                        packetList.add(0, packet);
+
+                        if (isFiltered && matchFilter(packet))
+                            packetFilteredList.add(0, packet);
+
                         notifyAdapter();
                     }
                 });
@@ -444,7 +880,14 @@ public class HciDebuggerActivity extends Activity {
                 runOnUiThread(new Runnable() {
                     @Override
                     public void run() {
-                        packetAdapter.insert(new PacketHciScoData(frameCount++, timestamp, finalDest, type), 0);
+
+                        Packet packet = new PacketHciScoData(frameCount++, timestamp, finalDest, type);
+
+                        packetList.add(0, packet);
+
+                        if (isFiltered && matchFilter(packet))
+                            packetFilteredList.add(0, packet);
+
                         notifyAdapter();
                     }
                 });

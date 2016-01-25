@@ -1,0 +1,82 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical">
+
+    <Spinner
+        android:id="@+id/packet_type_filter"
+        android:layout_width="fill_parent"
+        android:layout_height="wrap_content"
+        android:padding="10dp" />
+
+    <Spinner
+        android:id="@+id/cmd_ogf_filter"
+        android:layout_width="fill_parent"
+        android:layout_height="wrap_content"
+        android:padding="10dp"
+        android:visibility="gone" />
+
+    <Spinner
+        android:id="@+id/event_type_filter"
+        android:layout_width="fill_parent"
+        android:layout_height="wrap_content"
+        android:padding="10dp"
+        android:visibility="gone" />
+
+    <Spinner
+        android:id="@+id/subevent_type_filter"
+        android:layout_width="fill_parent"
+        android:layout_height="wrap_content"
+        android:padding="10dp"
+        android:visibility="gone" />
+
+    <TextView
+        android:id="@+id/device_address_label"
+        android:layout_width="fill_parent"
+        android:layout_height="wrap_content"
+        android:paddingLeft="10dp"
+        android:paddingRight="10dp"
+        android:paddingBottom="10dp"
+        android:text="device address"
+        android:textSize="16sp"
+        android:visibility="gone" />
+
+    <EditText
+        android:id="@+id/device_address_edit"
+        android:layout_width="fill_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginBottom="10dp"
+        android:paddingLeft="10dp"
+        android:paddingRight="10dp"
+        android:text=""
+        android:visibility="gone" />
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal">
+
+        <Button
+            android:id="@+id/button_cancel_filter"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="cancel" />
+
+        <Button
+            android:id="@+id/button_apply_filter"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="apply" />
+    </LinearLayout>
+
+    <Button
+        android:id="@+id/button_withdraw_filter"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="withdraw filter" />
+
+
+</LinearLayout>

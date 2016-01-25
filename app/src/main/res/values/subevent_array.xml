@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string-array name="subevent_array">
+        <item>Choose</item>
+        <item>CONNECTION_COMPLETE</item>
+        <item>ADVERTISING_REPORT</item>
+        <item>CONNECTION_UPDATE_COMPLETE</item>
+        <item>READ_REMOTE_USED_FEATURES_COMPLETE</item>
+        <item>LONG_TERM_KEY_REQUEST</item>
+        <item>REMOTE_CONNECTION_PARAMETER_REQUEST</item>
+        <item>DATA_LENGTH_CHANGE</item>
+        <item>READ_LOCAL_P256_PUBLIC_KEY_COMPLETE</item>
+        <item>GENERATE_DHKEY_COMPLETE</item>
+        <item>ENHANCED_CONNECTION_COMPLETE</item>
+        <item>DIRECT_ADVERTISING_REPORT</item>
+    </string-array>
+</resources>

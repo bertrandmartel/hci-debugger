@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string-array name="packet_type_array">
+        <item>Choose</item>
+        <item>EVENT</item>
+        <item>COMMAND</item>
+    </string-array>
+</resources>

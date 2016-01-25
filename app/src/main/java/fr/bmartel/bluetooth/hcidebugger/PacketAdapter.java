@@ -13,7 +13,7 @@ import java.util.List;
 
 public class PacketAdapter extends ArrayAdapter<Packet> {
 
-    List<Packet> packetList = new ArrayList<>();
+    List<Packet> packetFilteredList = new ArrayList<>();
 
     SimpleDateFormat timestampFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS");
 
@@ -23,7 +23,7 @@ public class PacketAdapter extends ArrayAdapter<Packet> {
                          List<Packet> objects) {
         super(context, textViewResourceId, objects);
 
-        this.packetList = objects;
+        this.packetFilteredList = objects;
 
         inflater = (LayoutInflater) context.getSystemService(Context.LAYOUT_INFLATER_SERVICE);
     }
@@ -45,10 +45,10 @@ public class PacketAdapter extends ArrayAdapter<Packet> {
             } else {
                 holder = (ViewHolder) vi.getTag();
             }
-            holder.packet_num.setText("" + packetList.get(position).getNum());
-            holder.packet_timestamp.setText(timestampFormat.format(packetList.get(position).getTimestamp()));
-            holder.packet_type.setText(packetList.get(position).getDisplayedType());
-            holder.packet_info.setText(packetList.get(position).getDisplayedInfo());
+            holder.packet_num.setText("" + packetFilteredList.get(position).getNum());
+            holder.packet_timestamp.setText(timestampFormat.format(packetFilteredList.get(position).getTimestamp()));
+            holder.packet_type.setText(packetFilteredList.get(position).getDisplayedType());
+            holder.packet_info.setText(packetFilteredList.get(position).getDisplayedInfo());
 
         } catch (Exception e) {
             e.printStackTrace();
@@ -57,7 +57,11 @@ public class PacketAdapter extends ArrayAdapter<Packet> {
     }
 
     public List<Packet> getPacketList() {
-        return packetList;
+        return packetFilteredList;
+    }
+
+    public void setPacketList(List<Packet> list) {
+        packetFilteredList = list;
     }
 
     @Override
@@ -66,7 +70,7 @@ public class PacketAdapter extends ArrayAdapter<Packet> {
     }
 
     public int getCount() {
-        return packetList.size();
+        return packetFilteredList.size();
     }
 
     @Override

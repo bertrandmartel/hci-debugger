@@ -1,6 +1,7 @@
 package fr.bmartel.bluetooth.hcidebugger;
 
 import android.content.Context;
+import android.graphics.Color;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -35,7 +36,7 @@ public class PacketAdapter extends ArrayAdapter<Packet> {
         final ViewHolder holder;
         try {
             if (convertView == null) {
-                vi = inflater.inflate(R.layout.packet_item, null);
+                vi = inflater.inflate(R.layout.packet_item, parent, false);
                 holder = new ViewHolder();
                 holder.packet_num = (TextView) vi.findViewById(R.id.packet_num);
                 holder.packet_timestamp = (TextView) vi.findViewById(R.id.packet_timestamp);

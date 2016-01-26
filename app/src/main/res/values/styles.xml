@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<resources>
+<resources xmlns:tools="http://schemas.android.com/tools">
 
     <style name="CustomActivityThemeNoActionBar" parent="@android:style/Theme.Light">
         <item name="android:windowNoTitle">true</item>
@@ -9,5 +9,12 @@
     <style name="AppTheme" parent="AppTheme.Base" />
 
     <style name="AppTheme.Base" parent="Theme.AppCompat.Light.DarkActionBar" />
+
+    <style name="wrapping_fa_text">
+        <item name="android:layout_width">wrap_content</item>
+        <item name="android:layout_height">wrap_content</item>
+        <item name="android:layout_margin">8dp</item>
+        <item name="android:textSize" tools:ignore="SpUsage">50dp</item>
+    </style>
 
 </resources>

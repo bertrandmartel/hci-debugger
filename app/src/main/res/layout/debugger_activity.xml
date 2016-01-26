@@ -1,67 +1,88 @@
 <?xml version="1.0" encoding="utf-8"?>
 <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:orientation="horizontal">
+    android:background="#e6e6e6"
+    android:orientation="horizontal"
+    android:theme="@style/CustomActivityThemeNoActionBar">
 
-    <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    <LinearLayout
         android:id="@+id/top_menu"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="horizontal"
-        android:padding="5dp"
-        android:theme="@style/CustomActivityThemeNoActionBar">
+        android:padding="10dp">
 
-        <TextView
-            android:id="@+id/filter_count"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_weight="0.2"
-            android:text=""
-            android:textAlignment="center"
-            android:textColor="@android:color/white"
-            android:textStyle="bold" />
-
-
-        <Button
+        <com.beardedhen.androidbootstrap.BootstrapButton
             android:id="@+id/clear_button"
-            android:layout_width="0dp"
+            android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_toRightOf="@id/filter_count"
-            android:layout_weight="0.2"
-            android:text="clear" />
+            android:layout_marginRight="5dp"
+            android:text="clear"
+            app:bootstrapBrand="primary"
+            app:bootstrapSize="lg"
+            app:buttonMode="regular"
+            app:roundedCorners="true"
+            app:showOutline="false" />
 
-        <Button
+        <com.beardedhen.androidbootstrap.BootstrapButton
             android:id="@+id/refresh_button"
-            android:layout_width="0dp"
+            android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_toRightOf="@id/filter_count"
-            android:layout_weight="0.2"
-            android:text="refresh" />
+            android:layout_marginRight="5dp"
+            android:text="refresh"
+            app:bootstrapBrand="primary"
+            app:bootstrapSize="lg"
+            app:buttonMode="regular"
+            app:roundedCorners="true"
+            app:showOutline="false" />
 
-        <Button
+        <com.beardedhen.androidbootstrap.BootstrapButton
             android:id="@+id/scan_button"
-            android:layout_width="0dp"
+            android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_toRightOf="@id/filter_count"
-            android:layout_weight="0.2"
-            android:text="start scan" />
+            android:layout_marginRight="5dp"
+            android:text="start scan"
+            app:bootstrapBrand="primary"
+            app:bootstrapSize="lg"
+            app:buttonMode="regular"
+            app:roundedCorners="true"
+            app:showOutline="false" />
 
-        <Button
+        <com.beardedhen.androidbootstrap.BootstrapButton
             android:id="@+id/enable_bluetooth"
-            android:layout_width="0dp"
+            android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_toRightOf="@id/filter_count"
-            android:layout_weight="0.2"
-            android:text="disable BT" />
+            android:layout_marginRight="5dp"
+            android:text="disable BT"
+            app:bootstrapBrand="primary"
+            app:bootstrapSize="lg"
+            app:buttonMode="regular"
+            app:roundedCorners="true"
+            app:showOutline="false" />
 
-        <Button
+        <com.beardedhen.androidbootstrap.BootstrapButton
             android:id="@+id/filter_button"
-            android:layout_width="0dp"
+            android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_toRightOf="@id/filter_count"
-            android:layout_weight="0.2"
-            android:text="filter" />
+            android:text="filter"
+            app:bootstrapBrand="primary"
+            app:bootstrapSize="lg"
+            app:buttonMode="regular"
+            app:roundedCorners="true"
+            app:showOutline="false" />
+
+        <com.beardedhen.androidbootstrap.AwesomeTextView
+            android:id="@+id/filter_count"
+            style="@style/wrapping_fa_text"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:text="2000/2000"
+            android:textAlignment="center"
+            android:textSize="15sp"
+            app:bootstrapBrand="primary"
+            app:fontAwesomeIcon="fa_android" />
 
     </LinearLayout>
 
@@ -69,42 +90,53 @@
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:layout_below="@+id/top_menu"
-        android:orientation="horizontal">
+        android:orientation="horizontal"
+        android:paddingLeft="10dp"
+        android:paddingRight="10dp">
 
         <ListView
             android:id="@+id/packet_list"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
-            android:listSelector="@drawable/selection_effect"></ListView>
+            android:choiceMode="singleChoice"
+            android:divider="@android:color/black"
+            android:dividerHeight="1px"
+            android:drawSelectorOnTop="false"
+            android:focusable="true"
+            android:listSelector="#e6e6e6"></ListView>
 
     </LinearLayout>
 
-    <ImageButton
-        android:id="@+id/hci_frame_orb"
+    <Button
+        android:id="@+id/snoop_frame_text"
         style="@style/AppTheme"
         android:layout_width="60dp"
         android:layout_height="60dp"
         android:layout_alignParentBottom="true"
         android:layout_alignParentRight="true"
-        android:layout_gravity="bottom|right"
-        android:layout_marginBottom="16dp"
-        android:layout_marginRight="16dp"
-        android:background="@drawable/circle"
-        android:elevation="10dp"
-        android:text="New Button" />
-
-    <ImageButton
-        android:id="@+id/snoop_frame_orb"
-        style="@style/AppTheme"
-        android:layout_width="60dp"
-        android:layout_height="60dp"
-        android:layout_alignParentBottom="true"
-        android:layout_alignParentRight="true"
-        android:layout_gravity="bottom|right"
         android:layout_marginBottom="16dp"
         android:layout_marginRight="92dp"
         android:background="@drawable/circle2"
         android:elevation="10dp"
-        android:text="New Button" />
+        android:gravity="center"
+        android:text="Snoop"
+        android:textColor="@android:color/black"
+        android:visibility="gone" />
+
+    <Button
+        android:id="@+id/hci_frame_text"
+        style="@style/AppTheme"
+        android:layout_width="60dp"
+        android:layout_height="60dp"
+        android:layout_alignParentBottom="true"
+        android:layout_alignParentRight="true"
+        android:layout_marginBottom="16dp"
+        android:layout_marginRight="16dp"
+        android:background="@drawable/circle"
+        android:elevation="10dp"
+        android:gravity="center"
+        android:text="HCI"
+        android:textColor="@android:color/black"
+        android:visibility="gone" />
 
 </RelativeLayout>

@@ -41,6 +41,8 @@ import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.Window;
+import android.view.animation.Animation;
+import android.view.animation.AnimationUtils;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
@@ -48,6 +50,8 @@ import android.widget.EditText;
 import android.widget.ListView;
 import android.widget.Spinner;
 import android.widget.TextView;
+
+import com.beardedhen.androidbootstrap.BootstrapButton;
 
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -100,7 +104,7 @@ public class HciDebuggerActivity extends Activity {
 
     private final static int REQUEST_ENABLE_BT = 1;
 
-    private Button bluetoothStateBtn;
+    private BootstrapButton bluetoothStateBtn;
 
     private boolean isFiltered = false;
 
@@ -111,13 +115,17 @@ public class HciDebuggerActivity extends Activity {
 
     private final static String PREFERENCES = "filters";
 
-    private String packetTypeFilter = "packetTypeFilter";
-    private String eventTypeFilter = "eventTypeFilter";
-    private String ogfFilter = "ogfFilter";
-    private String subeventFilter = "subeventFilter";
-    private String advertizingAddr = "advertizingAddr";
-
     private int selectedPacket = -1;
+
+    private TextView snoop_frame_text;
+    private TextView hci_frame_text;
+
+    private View lastSelectedView = null;
+
+    public static int mSelectedItem;
+
+    private Animation fadein;
+    private Animation fadeout;
 
     private Runnable decodingTask = new Runnable() {
         @Override
@@ -180,6 +188,13 @@ public class HciDebuggerActivity extends Activity {
         requestWindowFeature(Window.FEATURE_NO_TITLE);
         setContentView(R.layout.debugger_activity);
 
+        fadein = AnimationUtils.loadAnimation(HciDebuggerActivity.this, R.anim.fadein);
+        fadeout = AnimationUtils.loadAnimation(HciDebuggerActivity.this, R.anim.fadeout);
+
+
+        snoop_frame_text = (TextView) findViewById(R.id.snoop_frame_text);
+        hci_frame_text = (TextView) findViewById(R.id.hci_frame_text);
+
         SharedPreferences prefs = getSharedPreferences(PREFERENCES, MODE_PRIVATE);
 
         filters.setPacketType(prefs.getString("packetTypeFilter", ""));
@@ -208,7 +223,7 @@ public class HciDebuggerActivity extends Activity {
                 R.layout.packet_item, packetList);
 
         packetListView.setAdapter(packetAdapter);
-        packetListView.setSelector(R.drawable.selection_effect);
+        packetListView.setChoiceMode(ListView.CHOICE_MODE_SINGLE);
 
         packetListView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
             @Override
@@ -217,21 +232,37 @@ public class HciDebuggerActivity extends Activity {
                 final Packet item = (Packet) parent.getItemAtPosition(position);
 
                 if (selectedPacket != item.getNum()) {
+
                     selectedPacket = item.getNum();
-                    Log.i(TAG,"?");
-                    packetListView.setItemChecked(position,true);
-                    //view.setSelected(true);
+
+                    displayOrbs();
+
+                    /*
+                    view.setBackgroundColor(Color.CYAN);
+
+                    if (lastSelectedView != null && lastSelectedView != view) {
+                        lastSelectedView.setBackgroundColor(Color.parseColor("#e6e6e6"));
+                    }
+                    lastSelectedView = view;
+                    */
+
                 } else {
-                    Log.i(TAG,"??");
-                    packetListView.setItemChecked(position,false);
-                    //view.setSelected(false);
+
+                    packetListView.clearChoices();
+
+                    selectedPacket = -1;
+
+                    hideOrbs();
+
+                    //view.setBackgroundColor(Color.parseColor("#e6e6e6"));
+                    packetAdapter.notifyDataSetChanged();
                 }
 
                 Log.i(TAG, "item clicked !");
             }
         });
 
-        Button clear_button = (Button) findViewById(R.id.clear_button);
+        BootstrapButton clear_button = (BootstrapButton) findViewById(R.id.clear_button);
         clear_button.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -242,13 +273,16 @@ public class HciDebuggerActivity extends Activity {
                         packetList.clear();
                         packetFilteredList.clear();
                         packetAdapter.clear();
+                        packetListView.clearChoices();
                         notifyAdapter();
+
+                        hideOrbs();
                     }
                 });
             }
         });
 
-        Button refresh_button = (Button) findViewById(R.id.refresh_button);
+        BootstrapButton refresh_button = (BootstrapButton) findViewById(R.id.refresh_button);
         refresh_button.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -256,14 +290,17 @@ public class HciDebuggerActivity extends Activity {
                 packetList.clear();
                 packetFilteredList.clear();
                 packetAdapter.clear();
+                packetListView.clearChoices();
                 notifyAdapter();
                 frameCount = 1;
                 stopHciLogStream();
                 pool.execute(decodingTask);
+
+                hideOrbs();
             }
         });
 
-        final Button scan_button = (Button) findViewById(R.id.scan_button);
+        final BootstrapButton scan_button = (BootstrapButton) findViewById(R.id.scan_button);
         scan_button.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -281,7 +318,7 @@ public class HciDebuggerActivity extends Activity {
             }
         });
 
-        bluetoothStateBtn = (Button) findViewById(R.id.enable_bluetooth);
+        bluetoothStateBtn = (BootstrapButton) findViewById(R.id.enable_bluetooth);
 
         if (mBluetoothAdapter.isEnabled()) {
             bluetoothStateBtn.setText("disable BT");
@@ -302,7 +339,7 @@ public class HciDebuggerActivity extends Activity {
             }
         });
 
-        Button filter_button = (Button) findViewById(R.id.filter_button);
+        BootstrapButton filter_button = (BootstrapButton) findViewById(R.id.filter_button);
 
         filter_button.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -431,6 +468,30 @@ public class HciDebuggerActivity extends Activity {
         registerReceiver(bluetoothBroadcastReceiver, intentFilter);
 
         pool.execute(decodingTask);
+    }
+
+    private void displayOrbs() {
+
+        if ((snoop_frame_text.getVisibility() == View.GONE) &&
+                (hci_frame_text.getVisibility() == View.GONE)) {
+
+            snoop_frame_text.setVisibility(View.VISIBLE);
+            hci_frame_text.setVisibility(View.VISIBLE);
+            snoop_frame_text.startAnimation(fadein);
+            hci_frame_text.startAnimation(fadein);
+        }
+    }
+
+    private void hideOrbs() {
+
+        if ((snoop_frame_text.getVisibility() == View.VISIBLE) &&
+                (hci_frame_text.getVisibility() == View.VISIBLE)) {
+            snoop_frame_text.startAnimation(fadeout);
+            hci_frame_text.startAnimation(fadeout);
+            snoop_frame_text.setVisibility(View.GONE);
+            hci_frame_text.setVisibility(View.GONE);
+        }
+
     }
 
     private boolean matchFilter(Packet packet) {
@@ -910,4 +971,5 @@ public class HciDebuggerActivity extends Activity {
         frameCountView.setText(packetAdapter.getCount() + " /" + (frameCount - 1));
         packetAdapter.notifyDataSetChanged();
     }
+
 }

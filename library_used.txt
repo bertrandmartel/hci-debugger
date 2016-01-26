@@ -1,0 +1,13 @@
+floating button
+
+https://guides.codepath.com/android/floating-action-buttons#using-coordinatorlayout
+
+
+navigation drawer
+
+https://github.com/codepath/android_guides/wiki/Fragment-Navigation-Drawer
+
+bootstrap
+
+https://github.com/Bearded-Hen/Android-Bootstrap
+

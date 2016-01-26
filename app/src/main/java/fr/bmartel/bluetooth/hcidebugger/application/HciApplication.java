@@ -1,4 +1,4 @@
-package fr.bmartel.bluetooth.hcidebugger;
+package fr.bmartel.bluetooth.hcidebugger.application;
 
 import android.app.Application;
 

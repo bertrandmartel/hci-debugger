@@ -1,38 +1,38 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/packet_item"
     android:layout_width="match_parent"
     android:layout_height="25dp"
     android:background="?android:attr/activatedBackgroundIndicator"
     android:gravity="center_vertical"
-    android:orientation="horizontal"
-    >
+    android:orientation="horizontal">
 
     <TextView
         android:id="@+id/packet_num"
         android:layout_width="0dp"
-        android:textColor="#1a1a1a"
         android:layout_height="wrap_content"
-        android:layout_weight="0.2" />
+        android:layout_weight="0.2"
+        android:textColor="#1a1a1a" />
 
     <TextView
         android:id="@+id/packet_timestamp"
         android:layout_width="0dp"
-        android:textColor="#1a1a1a"
         android:layout_height="wrap_content"
-        android:layout_weight="0.7" />
+        android:layout_weight="0.7"
+        android:textColor="#1a1a1a" />
 
     <TextView
         android:id="@+id/packet_type"
         android:layout_width="0dp"
-        android:textColor="#1a1a1a"
         android:layout_height="wrap_content"
-        android:layout_weight="0.4" />
+        android:layout_weight="0.4"
+        android:textColor="#1a1a1a" />
 
     <TextView
         android:id="@+id/packet_info"
         android:layout_width="0dp"
-        android:textColor="#1a1a1a"
         android:layout_height="wrap_content"
-        android:layout_weight="1" />
+        android:layout_weight="1"
+        android:textColor="#1a1a1a" />
 
 </LinearLayout>

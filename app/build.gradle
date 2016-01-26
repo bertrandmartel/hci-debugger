@@ -32,6 +32,8 @@ dependencies {
     compile fileTree(dir: "$buildDir/native-libs", include: 'native-libs.jar')
     compile "com.android.support:appcompat-v7:22.1.0"
     compile 'com.beardedhen:androidbootstrap:2.0.1'
+    compile 'com.android.support:design:22.2.1'
+    compile 'com.android.support:recyclerview-v7:22.2.1'
 }
 
 task nativeLibsToJar(type: Zip, description: 'create a jar archive of the native libs') {

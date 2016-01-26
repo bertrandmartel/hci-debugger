@@ -1,13 +1,13 @@
-package fr.bmartel.bluetooth.hcidebugger;
+package fr.bmartel.bluetooth.hcidebugger.model;
 
 import java.util.Date;
 
 /**
  * @author Bertrand Martel
  */
-public class PacketHciAclData extends Packet {
+public class PacketHciScoData extends  Packet {
 
-    public PacketHciAclData(int num, Date timestamp, PacketDest dest, ValuePair type) {
+    public PacketHciScoData(int num, Date timestamp, PacketDest dest, ValuePair type) {
         super(num, timestamp, dest, type);
     }
 

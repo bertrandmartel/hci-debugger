@@ -21,9 +21,8 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
-package fr.bmartel.bluetooth.hcidebugger;
+package fr.bmartel.bluetooth.hcidebugger.activity;
 
-import android.app.Activity;
 import android.app.AlertDialog;
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
@@ -35,19 +34,28 @@ import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.SharedPreferences;
 import android.os.Bundle;
+import android.support.v4.view.GravityCompat;
+import android.support.v4.widget.DrawerLayout;
+import android.support.v7.app.ActionBarDrawerToggle;
+import android.support.v7.app.AppCompatActivity;
+import android.support.v7.widget.GridLayoutManager;
+import android.support.v7.widget.LinearLayoutManager;
+import android.support.v7.widget.RecyclerView;
+import android.support.v7.widget.Toolbar;
 import android.text.Editable;
 import android.text.TextWatcher;
 import android.util.Log;
+import android.view.GestureDetector;
 import android.view.LayoutInflater;
+import android.view.MenuItem;
+import android.view.MotionEvent;
 import android.view.View;
-import android.view.Window;
 import android.view.animation.Animation;
 import android.view.animation.AnimationUtils;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.EditText;
-import android.widget.ListView;
 import android.widget.Spinner;
 import android.widget.TextView;
 
@@ -63,14 +71,30 @@ import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
+import fr.bmartel.bluetooth.hcidebugger.R;
+import fr.bmartel.bluetooth.hcidebugger.SimpleDividerItemDecoration;
+import fr.bmartel.bluetooth.hcidebugger.adapter.PacketAdapter;
+import fr.bmartel.bluetooth.hcidebugger.model.AdvertizingReport;
+import fr.bmartel.bluetooth.hcidebugger.model.Filters;
+import fr.bmartel.bluetooth.hcidebugger.model.Packet;
+import fr.bmartel.bluetooth.hcidebugger.model.PacketDest;
+import fr.bmartel.bluetooth.hcidebugger.model.PacketHciAclData;
+import fr.bmartel.bluetooth.hcidebugger.model.PacketHciCmd;
+import fr.bmartel.bluetooth.hcidebugger.model.PacketHciEvent;
+import fr.bmartel.bluetooth.hcidebugger.model.PacketHciEventLEMeta;
+import fr.bmartel.bluetooth.hcidebugger.model.PacketHciLEAdvertizing;
+import fr.bmartel.bluetooth.hcidebugger.model.PacketHciScoData;
+import fr.bmartel.bluetooth.hcidebugger.model.ValuePair;
 
-public class HciDebuggerActivity extends Activity {
+
+public class HciDebuggerActivity extends AppCompatActivity {
 
     private final static String BT_CONFIG = "/etc/bluetooth/bt_stack.conf";
 
@@ -92,7 +116,7 @@ public class HciDebuggerActivity extends Activity {
 
     private int frameCount = 1;
 
-    private ListView packetListView;
+    private RecyclerView packetListView;
 
     private PacketAdapter packetAdapter;
 
@@ -115,17 +139,17 @@ public class HciDebuggerActivity extends Activity {
 
     private final static String PREFERENCES = "filters";
 
-    private int selectedPacket = -1;
-
     private TextView snoop_frame_text;
     private TextView hci_frame_text;
 
     private View lastSelectedView = null;
 
-    public static int mSelectedItem;
-
     private Animation fadein;
     private Animation fadeout;
+
+    private int scanItemCount = 0;
+
+    SimpleDateFormat timestampFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS");
 
     private Runnable decodingTask = new Runnable() {
         @Override
@@ -180,20 +204,39 @@ public class HciDebuggerActivity extends Activity {
 
     }
 
+    private Toolbar toolbar = null;
+    private DrawerLayout mDrawer = null;
+
+    private GestureDetector mGestureDetector;
+
+    private ActionBarDrawerToggle drawerToggle;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
 
         Log.v(TAG, "onCreate()");
         super.onCreate(savedInstanceState);
-        requestWindowFeature(Window.FEATURE_NO_TITLE);
         setContentView(R.layout.debugger_activity);
+
+        // Set a Toolbar to replace the ActionBar.
+        toolbar = (Toolbar) findViewById(R.id.toolbar_item);
+        setSupportActionBar(toolbar);
+        getSupportActionBar().setTitle("HCI Debugger Tool");
+        getSupportActionBar().setHomeButtonEnabled(true);
+        getSupportActionBar().setDisplayHomeAsUpEnabled(true);
+
+        // Find our drawer view
+        mDrawer = (DrawerLayout) findViewById(R.id.drawer_layout);
+        drawerToggle = setupDrawerToggle();
+        mDrawer.setDrawerListener(drawerToggle);
 
         fadein = AnimationUtils.loadAnimation(HciDebuggerActivity.this, R.anim.fadein);
         fadeout = AnimationUtils.loadAnimation(HciDebuggerActivity.this, R.anim.fadeout);
 
-
+        /*
         snoop_frame_text = (TextView) findViewById(R.id.snoop_frame_text);
         hci_frame_text = (TextView) findViewById(R.id.hci_frame_text);
+        */
 
         SharedPreferences prefs = getSharedPreferences(PREFERENCES, MODE_PRIVATE);
 
@@ -215,16 +258,86 @@ public class HciDebuggerActivity extends Activity {
             startActivityForResult(enableBtIntent, REQUEST_ENABLE_BT);
         }
 
-        packetListView = (ListView) findViewById(R.id.packet_list);
+        packetListView = (RecyclerView) findViewById(R.id.packet_list);
 
         packetList = new ArrayList<>();
 
-        packetAdapter = new PacketAdapter(HciDebuggerActivity.this,
-                R.layout.packet_item, packetList);
+        packetAdapter = new PacketAdapter(packetList, this);
+
+        packetListView.setLayoutManager(new GridLayoutManager(this, 1, LinearLayoutManager.VERTICAL, false));
+
+        packetListView.addItemDecoration(new SimpleDividerItemDecoration(
+                getApplicationContext()
+        ));
+
+
+        mGestureDetector = new GestureDetector(this, new GestureDetector.SimpleOnGestureListener() {
+            @Override
+            public boolean onSingleTapUp(MotionEvent e) {
+                return true;
+            }
+        });
+
+        packetListView.addOnItemTouchListener(new RecyclerView.OnItemTouchListener() {
+
+            @Override
+            public boolean onInterceptTouchEvent(RecyclerView rv, MotionEvent e) {
+
+                View childView = rv.findChildViewUnder(e.getX(), e.getY());
+
+                if (childView != null && mGestureDetector.onTouchEvent(e)) {
+
+                    int index = rv.getChildAdapterPosition(childView);
+
+                    final Packet item = packetList.get(index);
+
+                    if (packetAdapter.getSelectedPacket() != item.getNum()) {
+
+                        packetAdapter.setSelectedPacket(item.getNum());
+                        childView.setBackgroundColor(getResources().getColor(R.color.highlight));
+
+                        if (lastSelectedView != null)
+                            lastSelectedView.setBackgroundColor(getResources().getColor(R.color.background));
+
+                        lastSelectedView = childView;
+
+                    } else {
+                        packetAdapter.setSelectedPacket(-1);
+                        childView.setBackgroundColor(getResources().getColor(R.color.background));
+                        packetAdapter.notifyDataSetChanged();
+                    }
+
+                    Log.i(TAG, "item clicked !");
+
+                    return true;
+                }
+
+
+                return false;
+            }
+
+            @Override
+            public void onTouchEvent(RecyclerView rv, MotionEvent e) {
+
+
+            }
+
+            @Override
+            public void onRequestDisallowInterceptTouchEvent(boolean disallowIntercept) {
+
+            }
+        });
 
         packetListView.setAdapter(packetAdapter);
-        packetListView.setChoiceMode(ListView.CHOICE_MODE_SINGLE);
+        //packetListView.setChoiceMode(ListView.CHOICE_MODE_SINGLE);
 
+        packetListView.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                Log.i(TAG, "item clicked !");
+            }
+        });
+        /*
         packetListView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
             @Override
             public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
@@ -237,14 +350,6 @@ public class HciDebuggerActivity extends Activity {
 
                     displayOrbs();
 
-                    /*
-                    view.setBackgroundColor(Color.CYAN);
-
-                    if (lastSelectedView != null && lastSelectedView != view) {
-                        lastSelectedView.setBackgroundColor(Color.parseColor("#e6e6e6"));
-                    }
-                    lastSelectedView = view;
-                    */
 
                 } else {
 
@@ -261,7 +366,7 @@ public class HciDebuggerActivity extends Activity {
                 Log.i(TAG, "item clicked !");
             }
         });
-
+    */
         BootstrapButton clear_button = (BootstrapButton) findViewById(R.id.clear_button);
         clear_button.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -272,8 +377,7 @@ public class HciDebuggerActivity extends Activity {
                     public void run() {
                         packetList.clear();
                         packetFilteredList.clear();
-                        packetAdapter.clear();
-                        packetListView.clearChoices();
+                        //packetListView.clearChoices();
                         notifyAdapter();
 
                         hideOrbs();
@@ -289,8 +393,7 @@ public class HciDebuggerActivity extends Activity {
                 Log.v(TAG, "refreshing adapter");
                 packetList.clear();
                 packetFilteredList.clear();
-                packetAdapter.clear();
-                packetListView.clearChoices();
+                //packetListView.clearChoices();
                 notifyAdapter();
                 frameCount = 1;
                 stopHciLogStream();
@@ -307,6 +410,7 @@ public class HciDebuggerActivity extends Activity {
                 if (!mScanning) {
                     Log.v(TAG, "starting scan");
                     mScanning = true;
+                    scanItemCount = 0;
                     mBluetoothAdapter.startLeScan(mLeScanCallback);
                     scan_button.setText("stop scan");
                 } else {
@@ -470,8 +574,31 @@ public class HciDebuggerActivity extends Activity {
         pool.execute(decodingTask);
     }
 
-    private void displayOrbs() {
+    private ActionBarDrawerToggle setupDrawerToggle() {
+        return new ActionBarDrawerToggle(this, mDrawer, toolbar, R.string.drawer_open, R.string.drawer_close);
+    }
 
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        // The action bar home/up action should open or close the drawer.
+        switch (item.getItemId()) {
+            case android.R.id.home:
+                mDrawer.openDrawer(GravityCompat.START);
+                return true;
+        }
+
+        return super.onOptionsItemSelected(item);
+    }
+
+    // Make sure this is the method with just `Bundle` as the signature
+    @Override
+    protected void onPostCreate(Bundle savedInstanceState) {
+        super.onPostCreate(savedInstanceState);
+        drawerToggle.syncState();
+    }
+
+    private void displayOrbs() {
+        /*
         if ((snoop_frame_text.getVisibility() == View.GONE) &&
                 (hci_frame_text.getVisibility() == View.GONE)) {
 
@@ -480,10 +607,11 @@ public class HciDebuggerActivity extends Activity {
             snoop_frame_text.startAnimation(fadein);
             hci_frame_text.startAnimation(fadein);
         }
+        */
     }
 
     private void hideOrbs() {
-
+        /*
         if ((snoop_frame_text.getVisibility() == View.VISIBLE) &&
                 (hci_frame_text.getVisibility() == View.VISIBLE)) {
             snoop_frame_text.startAnimation(fadeout);
@@ -491,6 +619,7 @@ public class HciDebuggerActivity extends Activity {
             snoop_frame_text.setVisibility(View.GONE);
             hci_frame_text.setVisibility(View.GONE);
         }
+        */
 
     }
 
@@ -525,39 +654,44 @@ public class HciDebuggerActivity extends Activity {
 
                             if (!filters.getSubeventFilter().equals("") && filters.getEventTypeFilter().equals("LE_META")) {
 
-                                PacketHciEventLEMeta leMeta = (PacketHciEventLEMeta) packet;
+                                if (packet instanceof PacketHciEventLEMeta) {
 
-                                if (!filters.getSubeventFilter().equals("")) {
+                                    PacketHciEventLEMeta leMeta = (PacketHciEventLEMeta) packet;
 
-                                    if (leMeta.getSubevent().getValue().contains(filters.getSubeventFilter())) {
+                                    if (!filters.getSubeventFilter().equals("")) {
 
-                                        if (filters.getSubeventFilter().equals("ADVERTISING_REPORT")) {
+                                        if (leMeta.getSubevent().getValue().contains(filters.getSubeventFilter())) {
 
-                                            if (!filters.getAdvertizingAddr().equals("")) {
+                                            if (filters.getSubeventFilter().equals("ADVERTISING_REPORT")) {
 
-                                                PacketHciLEAdvertizing adReportFrame = (PacketHciLEAdvertizing) packet;
+                                                if (!filters.getAdvertizingAddr().equals("")) {
 
-                                                for (int i = 0; i < adReportFrame.getReports().size(); i++) {
-                                                    if (adReportFrame.getReports().get(i).getAddress().toLowerCase().equals(filters.getAdvertizingAddr().toLowerCase())) {
-                                                        return true;
+                                                    PacketHciLEAdvertizing adReportFrame = (PacketHciLEAdvertizing) packet;
+
+                                                    for (int i = 0; i < adReportFrame.getReports().size(); i++) {
+                                                        if (adReportFrame.getReports().get(i).getAddress().toLowerCase().equals(filters.getAdvertizingAddr().toLowerCase())) {
+                                                            return true;
+                                                        }
                                                     }
+                                                    return false;
+
+                                                } else {
+                                                    return true;
                                                 }
-                                                return false;
 
                                             } else {
                                                 return true;
                                             }
 
                                         } else {
-                                            return true;
+                                            return false;
                                         }
 
                                     } else {
-                                        return false;
+                                        return true;
                                     }
-
                                 } else {
-                                    return true;
+                                    return false;
                                 }
 
                             } else {
@@ -741,6 +875,11 @@ public class HciDebuggerActivity extends Activity {
         @Override
         public void onLeScan(final BluetoothDevice device, int rssi, byte[] scanRecord) {
 
+            if (device != null && device.getAddress() != null && device.getAddress().equals("F2:34:A1:39:16:AA")) {
+
+                scanItemCount++;
+                Log.i(TAG, timestampFormat.format(new Date().getTime()) + " detected NIU : " + scanItemCount);
+            }
         }
     };
 
@@ -968,7 +1107,7 @@ public class HciDebuggerActivity extends Activity {
     private void notifyAdapter() {
 
         TextView frameCountView = (TextView) findViewById(R.id.filter_count);
-        frameCountView.setText(packetAdapter.getCount() + " /" + (frameCount - 1));
+        frameCountView.setText(packetAdapter.getItemCount() + " /" + (frameCount - 1));
         packetAdapter.notifyDataSetChanged();
     }
 

@@ -1,142 +1,173 @@
 <?xml version="1.0" encoding="utf-8"?>
-<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<android.support.v4.widget.DrawerLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/drawer_layout"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="#e6e6e6"
-    android:orientation="horizontal"
-    android:theme="@style/CustomActivityThemeNoActionBar">
-
-    <LinearLayout
-        android:id="@+id/top_menu"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:orientation="horizontal"
-        android:padding="10dp">
-
-        <com.beardedhen.androidbootstrap.BootstrapButton
-            android:id="@+id/clear_button"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginRight="5dp"
-            android:text="clear"
-            app:bootstrapBrand="primary"
-            app:bootstrapSize="lg"
-            app:buttonMode="regular"
-            app:roundedCorners="true"
-            app:showOutline="false" />
-
-        <com.beardedhen.androidbootstrap.BootstrapButton
-            android:id="@+id/refresh_button"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginRight="5dp"
-            android:text="refresh"
-            app:bootstrapBrand="primary"
-            app:bootstrapSize="lg"
-            app:buttonMode="regular"
-            app:roundedCorners="true"
-            app:showOutline="false" />
-
-        <com.beardedhen.androidbootstrap.BootstrapButton
-            android:id="@+id/scan_button"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginRight="5dp"
-            android:text="start scan"
-            app:bootstrapBrand="primary"
-            app:bootstrapSize="lg"
-            app:buttonMode="regular"
-            app:roundedCorners="true"
-            app:showOutline="false" />
-
-        <com.beardedhen.androidbootstrap.BootstrapButton
-            android:id="@+id/enable_bluetooth"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginRight="5dp"
-            android:text="disable BT"
-            app:bootstrapBrand="primary"
-            app:bootstrapSize="lg"
-            app:buttonMode="regular"
-            app:roundedCorners="true"
-            app:showOutline="false" />
-
-        <com.beardedhen.androidbootstrap.BootstrapButton
-            android:id="@+id/filter_button"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="filter"
-            app:bootstrapBrand="primary"
-            app:bootstrapSize="lg"
-            app:buttonMode="regular"
-            app:roundedCorners="true"
-            app:showOutline="false" />
-
-        <com.beardedhen.androidbootstrap.AwesomeTextView
-            android:id="@+id/filter_count"
-            style="@style/wrapping_fa_text"
-            android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            android:text="2000/2000"
-            android:textAlignment="center"
-            android:textSize="15sp"
-            app:bootstrapBrand="primary"
-            app:fontAwesomeIcon="fa_android" />
-
-    </LinearLayout>
+    android:orientation="horizontal">
 
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:layout_below="@+id/top_menu"
-        android:orientation="horizontal"
-        android:paddingLeft="10dp"
-        android:paddingRight="10dp">
+        android:background="#e6e6e6"
+        android:orientation="vertical">
 
-        <ListView
-            android:id="@+id/packet_list"
+        <!-- The ActionBar displayed at the top -->
+        <include
+            layout="@layout/toolbar"
             android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            android:choiceMode="singleChoice"
-            android:divider="@android:color/black"
-            android:dividerHeight="1px"
-            android:drawSelectorOnTop="false"
-            android:focusable="true"
-            android:listSelector="#e6e6e6"></ListView>
+            android:layout_height="?actionBarSize" />
+
+
+        <LinearLayout
+            android:id="@+id/top_menu"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:padding="10dp">
+
+            <com.beardedhen.androidbootstrap.BootstrapButton
+                android:id="@+id/clear_button"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginRight="5dp"
+                android:text="clear"
+                app:bootstrapBrand="primary"
+                app:bootstrapSize="lg"
+                app:buttonMode="regular"
+                app:roundedCorners="true"
+                app:showOutline="false" />
+
+            <com.beardedhen.androidbootstrap.BootstrapButton
+                android:id="@+id/refresh_button"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginRight="5dp"
+                android:text="refresh"
+                app:bootstrapBrand="primary"
+                app:bootstrapSize="lg"
+                app:buttonMode="regular"
+                app:roundedCorners="true"
+                app:showOutline="false" />
+
+            <com.beardedhen.androidbootstrap.BootstrapButton
+                android:id="@+id/scan_button"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginRight="5dp"
+                android:text="start scan"
+                app:bootstrapBrand="primary"
+                app:bootstrapSize="lg"
+                app:buttonMode="regular"
+                app:roundedCorners="true"
+                app:showOutline="false" />
+
+            <com.beardedhen.androidbootstrap.BootstrapButton
+                android:id="@+id/enable_bluetooth"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginRight="5dp"
+                android:text="disable BT"
+                app:bootstrapBrand="primary"
+                app:bootstrapSize="lg"
+                app:buttonMode="regular"
+                app:roundedCorners="true"
+                app:showOutline="false" />
+
+            <com.beardedhen.androidbootstrap.BootstrapButton
+                android:id="@+id/filter_button"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="filter"
+                app:bootstrapBrand="primary"
+                app:bootstrapSize="lg"
+                app:buttonMode="regular"
+                app:roundedCorners="true"
+                app:showOutline="false" />
+
+            <com.beardedhen.androidbootstrap.AwesomeTextView
+                android:id="@+id/filter_count"
+                style="@style/wrapping_fa_text"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:text="2000/2000"
+                android:textAlignment="center"
+                android:textSize="15sp"
+                app:bootstrapBrand="primary"
+                app:fontAwesomeIcon="fa_android" />
+
+        </LinearLayout>
+
+        <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+            xmlns:app="http://schemas.android.com/apk/res-auto"
+            android:id="@+id/main_content"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent">
+
+
+            <android.support.v7.widget.RecyclerView
+                android:id="@+id/packet_list"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:choiceMode="singleChoice"
+                android:divider="@android:color/black"
+                android:dividerHeight="1px"
+                android:drawSelectorOnTop="false"
+                android:focusable="true"
+                android:listSelector="#e6e6e6"
+                android:paddingLeft="10dp"
+                android:paddingRight="10dp" />
+
+            <Button
+                app:layout_behavior="fr.bmartel.bluetooth.hcidebugger.ScrollAwareFABBehavior"
+                android:id="@+id/snoop_frame_text"
+                android:layout_width="60dp"
+                android:layout_height="60dp"
+                android:layout_alignParentBottom="true"
+                android:layout_alignParentRight="true"
+                android:layout_marginBottom="16dp"
+                android:layout_marginRight="92dp"
+                android:gravity="center"
+                android:text="Snoop"
+                android:textColor="@android:color/black"
+                android:visibility="visible"
+                app:layout_anchor="@id/packet_list"
+                android:background="@drawable/circle2"
+                android:elevation="10dp"
+                app:layout_anchorGravity="bottom|right|end" />
+
+            <Button
+                app:layout_behavior="fr.bmartel.bluetooth.hcidebugger.ScrollAwareFABBehavior"
+                android:id="@+id/hci_frame_text"
+                android:layout_width="60dp"
+                android:layout_height="60dp"
+                android:layout_alignParentBottom="true"
+                android:layout_alignParentRight="true"
+                android:layout_marginBottom="16dp"
+                android:layout_marginRight="16dp"
+                android:gravity="center"
+                android:text="HCI"
+                android:textColor="@android:color/black"
+                android:background="@drawable/circle"
+                android:visibility="visible"
+                app:layout_anchor="@id/packet_list"
+                android:elevation="10dp"
+                app:layout_anchorGravity="bottom|right|end" />
+
+        </RelativeLayout>
 
     </LinearLayout>
 
-    <Button
-        android:id="@+id/snoop_frame_text"
-        style="@style/AppTheme"
-        android:layout_width="60dp"
-        android:layout_height="60dp"
-        android:layout_alignParentBottom="true"
-        android:layout_alignParentRight="true"
-        android:layout_marginBottom="16dp"
-        android:layout_marginRight="92dp"
-        android:background="@drawable/circle2"
-        android:elevation="10dp"
-        android:gravity="center"
-        android:text="Snoop"
-        android:textColor="@android:color/black"
-        android:visibility="gone" />
+    <!-- The navigation drawer that comes from the left -->
+    <!-- Note that `android:layout_gravity` needs to be set to 'start' -->
+    <android.support.design.widget.NavigationView
+        android:id="@+id/nvView"
+        android:layout_width="wrap_content"
+        android:layout_height="match_parent"
+        android:layout_gravity="start"
+        android:background="@android:color/white"
+        android:layout_marginTop="@dimen/abc_action_bar_default_height_material"
+        app:menu="@menu/drawer_view" />
 
-    <Button
-        android:id="@+id/hci_frame_text"
-        style="@style/AppTheme"
-        android:layout_width="60dp"
-        android:layout_height="60dp"
-        android:layout_alignParentBottom="true"
-        android:layout_alignParentRight="true"
-        android:layout_marginBottom="16dp"
-        android:layout_marginRight="16dp"
-        android:background="@drawable/circle"
-        android:elevation="10dp"
-        android:gravity="center"
-        android:text="HCI"
-        android:textColor="@android:color/black"
-        android:visibility="gone" />
-
-</RelativeLayout>
+</android.support.v4.widget.DrawerLayout>

@@ -1,4 +1,4 @@
-package fr.bmartel.bluetooth.hcidebugger;
+package fr.bmartel.bluetooth.hcidebugger.model;
 
 import java.util.ArrayList;
 import java.util.Date;

@@ -42,7 +42,7 @@ static BtSnoopParser *parser_ptr;
 
 extern "C" {
 
-JNIEXPORT void JNICALL Java_fr_bmartel_bluetooth_hcidebugger_HciDebuggerActivity_startHciLogStream(JNIEnv* env, jobject obj,jstring filePath)
+JNIEXPORT void JNICALL Java_fr_bmartel_bluetooth_hcidebugger_activity_HciDebuggerActivity_startHciLogStream(JNIEnv* env, jobject obj,jstring filePath)
 {
 	BtSnoopTask::jobj = env->NewGlobalRef(obj);
 
@@ -89,7 +89,7 @@ JNIEXPORT void JNICALL Java_fr_bmartel_bluetooth_hcidebugger_HciDebuggerActivity
 
 extern "C" {
 
-JNIEXPORT void JNICALL Java_fr_bmartel_bluetooth_hcidebugger_HciDebuggerActivity_stopHciLogStream(JNIEnv* env, jobject obj)
+JNIEXPORT void JNICALL Java_fr_bmartel_bluetooth_hcidebugger_activity_HciDebuggerActivity_stopHciLogStream(JNIEnv* env, jobject obj)
 {
 	__android_log_print(ANDROID_LOG_VERBOSE,"stopHciLogStream","stopping thread\n");
 	

@@ -12,8 +12,8 @@ public class PacketHciCmd extends Packet {
 
     private String displayedInfo = "";
 
-    public PacketHciCmd(int num, Date timestamp, PacketDest dest, ValuePair type, ValuePair ocf, ValuePair ogf) {
-        super(num, timestamp, dest, type);
+    public PacketHciCmd(int num, Date timestamp, PacketDest dest, ValuePair type, ValuePair ocf, ValuePair ogf, String jsonFormattedHciPacket, String jsonFormattedSnoopPacket) {
+        super(num, timestamp, dest, type, jsonFormattedHciPacket, jsonFormattedSnoopPacket);
 
         this.ocf = ocf;
         this.ogf = ogf;

@@ -5,10 +5,10 @@ import java.util.Date;
 /**
  * @author Bertrand Martel
  */
-public class PacketHciScoData extends  Packet {
+public class PacketHciScoData extends Packet {
 
-    public PacketHciScoData(int num, Date timestamp, PacketDest dest, ValuePair type) {
-        super(num, timestamp, dest, type);
+    public PacketHciScoData(int num, Date timestamp, PacketDest dest, ValuePair type, String jsonFormattedHciPacket, String jsonFormattedSnoopPacket) {
+        super(num, timestamp, dest, type, jsonFormattedHciPacket, jsonFormattedSnoopPacket);
     }
 
     @Override

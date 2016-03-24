@@ -11,8 +11,8 @@ public class PacketHciLEAdvertizing extends PacketHciEventLEMeta {
 
     private List<AdvertizingReport> reports = new ArrayList<>();
 
-    public PacketHciLEAdvertizing(int num, Date timestamp, PacketDest dest, ValuePair type, ValuePair eventType, ValuePair subevent, List<AdvertizingReport> reports) {
-        super(num, timestamp, dest, type, eventType, subevent);
+    public PacketHciLEAdvertizing(int num, Date timestamp, PacketDest dest, ValuePair type, ValuePair eventType, ValuePair subevent, List<AdvertizingReport> reports, String jsonFormattedHciPacket, String jsonFormattedSnoopPacket) {
+        super(num, timestamp, dest, type, eventType, subevent, jsonFormattedHciPacket, jsonFormattedSnoopPacket);
         this.reports = reports;
     }
 

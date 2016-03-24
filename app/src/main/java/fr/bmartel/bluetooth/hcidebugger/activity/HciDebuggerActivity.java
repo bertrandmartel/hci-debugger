@@ -33,33 +33,31 @@ import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.SharedPreferences;
+import android.content.res.Configuration;
 import android.os.Bundle;
-import android.support.v4.view.GravityCompat;
-import android.support.v4.widget.DrawerLayout;
-import android.support.v7.app.ActionBarDrawerToggle;
-import android.support.v7.app.AppCompatActivity;
+import android.support.design.widget.FloatingActionButton;
+import android.support.design.widget.NavigationView;
+import android.support.v4.widget.SwipeRefreshLayout;
 import android.support.v7.widget.GridLayoutManager;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
-import android.support.v7.widget.Toolbar;
 import android.text.Editable;
 import android.text.TextWatcher;
 import android.util.Log;
 import android.view.GestureDetector;
 import android.view.LayoutInflater;
+import android.view.Menu;
 import android.view.MenuItem;
 import android.view.MotionEvent;
 import android.view.View;
-import android.view.animation.Animation;
-import android.view.animation.AnimationUtils;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.EditText;
+import android.widget.FrameLayout;
 import android.widget.Spinner;
 import android.widget.TextView;
-
-import com.beardedhen.androidbootstrap.BootstrapButton;
+import android.widget.Toast;
 
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -78,9 +76,12 @@ import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
+import fr.bmartel.bluetooth.hcidebugger.IHciDebugger;
 import fr.bmartel.bluetooth.hcidebugger.R;
 import fr.bmartel.bluetooth.hcidebugger.SimpleDividerItemDecoration;
 import fr.bmartel.bluetooth.hcidebugger.adapter.PacketAdapter;
+import fr.bmartel.bluetooth.hcidebugger.common.Constants;
+import fr.bmartel.bluetooth.hcidebugger.menu.MenuUtils;
 import fr.bmartel.bluetooth.hcidebugger.model.AdvertizingReport;
 import fr.bmartel.bluetooth.hcidebugger.model.Filters;
 import fr.bmartel.bluetooth.hcidebugger.model.Packet;
@@ -92,9 +93,10 @@ import fr.bmartel.bluetooth.hcidebugger.model.PacketHciEventLEMeta;
 import fr.bmartel.bluetooth.hcidebugger.model.PacketHciLEAdvertizing;
 import fr.bmartel.bluetooth.hcidebugger.model.PacketHciScoData;
 import fr.bmartel.bluetooth.hcidebugger.model.ValuePair;
+import fr.bmartel.bluetooth.hcidebugger.view.CustomRecyclerView;
 
 
-public class HciDebuggerActivity extends AppCompatActivity {
+public class HciDebuggerActivity extends BaseActivity implements SwipeRefreshLayout.OnRefreshListener, RecyclerView.OnItemTouchListener, IHciDebugger {
 
     private final static String BT_CONFIG = "/etc/bluetooth/bt_stack.conf";
 
@@ -105,7 +107,7 @@ public class HciDebuggerActivity extends AppCompatActivity {
     /**
      * start streaming hci log file
      */
-    public native void startHciLogStream(String filePath);
+    public native void startHciLogStream(String filePath, int lastPacketCount);
 
     /**
      * stop streaming hci log file
@@ -116,7 +118,7 @@ public class HciDebuggerActivity extends AppCompatActivity {
 
     private int frameCount = 1;
 
-    private RecyclerView packetListView;
+    private CustomRecyclerView packetListView;
 
     private PacketAdapter packetAdapter;
 
@@ -126,10 +128,6 @@ public class HciDebuggerActivity extends AppCompatActivity {
 
     private boolean mScanning;
 
-    private final static int REQUEST_ENABLE_BT = 1;
-
-    private BootstrapButton bluetoothStateBtn;
-
     private boolean isFiltered = false;
 
     private List<Packet> packetList = new ArrayList<>();
@@ -137,23 +135,33 @@ public class HciDebuggerActivity extends AppCompatActivity {
 
     private Filters filters = new Filters("", "", "", "", "");
 
-    private final static String PREFERENCES = "filters";
-
-    private TextView snoop_frame_text;
-    private TextView hci_frame_text;
-
-    private View lastSelectedView = null;
-
-    private Animation fadein;
-    private Animation fadeout;
-
     private int scanItemCount = 0;
 
+    private SharedPreferences prefs;
+
+    private boolean startScan = false;
+
     SimpleDateFormat timestampFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS");
+
+    private boolean floatBtnDown = true;
+
+    FrameLayout mDisplayFrame;
+    FrameLayout mWaitingFrame;
+
+    private int mPacketCount = 0;
+    private int mMaxPacketCount = Constants.DEFAULT_LAST_PACKET_COUNT;
 
     private Runnable decodingTask = new Runnable() {
         @Override
         public void run() {
+
+            runOnUiThread(new Runnable() {
+                @Override
+                public void run() {
+                    mDisplayFrame.setVisibility(View.GONE);
+                    mWaitingFrame.setVisibility(View.VISIBLE);
+                }
+            });
 
             String filePath = getHciLogFilePath();
 
@@ -164,7 +172,7 @@ public class HciDebuggerActivity extends AppCompatActivity {
             }
 
             if (!filePath.equals("")) {
-                startHciLogStream(filePath);
+                startHciLogStream(filePath, prefs.getInt("lastPacketCount", Constants.DEFAULT_LAST_PACKET_COUNT));
             } else {
                 showWarningDialog("HCI file path not specified in " + BT_CONFIG);
             }
@@ -201,44 +209,36 @@ public class HciDebuggerActivity extends AppCompatActivity {
                         .setNegativeButton("retry", dialogClickListener).show();
             }
         });
-
     }
-
-    private Toolbar toolbar = null;
-    private DrawerLayout mDrawer = null;
 
     private GestureDetector mGestureDetector;
 
-    private ActionBarDrawerToggle drawerToggle;
+    private SwipeRefreshLayout mSwipeRefreshLayout;
 
-    @Override
     protected void onCreate(Bundle savedInstanceState) {
 
-        Log.v(TAG, "onCreate()");
+        setLayout(R.layout.debugger_activity);
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.debugger_activity);
 
-        // Set a Toolbar to replace the ActionBar.
-        toolbar = (Toolbar) findViewById(R.id.toolbar_item);
-        setSupportActionBar(toolbar);
-        getSupportActionBar().setTitle("HCI Debugger Tool");
-        getSupportActionBar().setHomeButtonEnabled(true);
-        getSupportActionBar().setDisplayHomeAsUpEnabled(true);
+        mDisplayFrame = (FrameLayout) findViewById(R.id.display_frame);
+        mWaitingFrame = (FrameLayout) findViewById(R.id.waiting_frame);
 
-        // Find our drawer view
-        mDrawer = (DrawerLayout) findViewById(R.id.drawer_layout);
-        drawerToggle = setupDrawerToggle();
-        mDrawer.setDrawerListener(drawerToggle);
 
-        fadein = AnimationUtils.loadAnimation(HciDebuggerActivity.this, R.anim.fadein);
-        fadeout = AnimationUtils.loadAnimation(HciDebuggerActivity.this, R.anim.fadeout);
+        mGestureDetector = new GestureDetector(this, new GestureDetector.SimpleOnGestureListener() {
+            @Override
+            public boolean onSingleTapUp(MotionEvent e) {
+                return true;
+            }
+        });
 
-        /*
-        snoop_frame_text = (TextView) findViewById(R.id.snoop_frame_text);
-        hci_frame_text = (TextView) findViewById(R.id.hci_frame_text);
-        */
+        // Setup drawer view
+        setupDrawerContent(nvDrawer);
 
-        SharedPreferences prefs = getSharedPreferences(PREFERENCES, MODE_PRIVATE);
+        if (getResources().getConfiguration().orientation == Configuration.ORIENTATION_PORTRAIT) {
+            toolbar.setTitle("");
+        }
+
+        prefs = getSharedPreferences(Constants.PREFERENCES, MODE_PRIVATE);
 
         filters.setPacketType(prefs.getString("packetTypeFilter", ""));
         filters.setEventType(prefs.getString("eventTypeFilter", ""));
@@ -246,19 +246,14 @@ public class HciDebuggerActivity extends AppCompatActivity {
         filters.setSubEventType(prefs.getString("subeventFilter", ""));
         filters.setAddress(prefs.getString("advertizingAddr", ""));
 
+        mMaxPacketCount = prefs.getInt("lastPacketCount", Constants.DEFAULT_LAST_PACKET_COUNT);
+
         // Initializes Bluetooth adapter.
         final BluetoothManager bluetoothManager = (BluetoothManager) getSystemService(Context.BLUETOOTH_SERVICE);
 
         mBluetoothAdapter = bluetoothManager.getAdapter();
 
-        // Ensures Bluetooth is available on the device and it is enabled. If not,
-        // displays a dialog requesting user permission to enable Bluetooth.
-        if (mBluetoothAdapter == null || !mBluetoothAdapter.isEnabled()) {
-            Intent enableBtIntent = new Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE);
-            startActivityForResult(enableBtIntent, REQUEST_ENABLE_BT);
-        }
-
-        packetListView = (RecyclerView) findViewById(R.id.packet_list);
+        packetListView = (CustomRecyclerView) findViewById(R.id.packet_list);
 
         packetList = new ArrayList<>();
 
@@ -270,357 +265,388 @@ public class HciDebuggerActivity extends AppCompatActivity {
                 getApplicationContext()
         ));
 
-
-        mGestureDetector = new GestureDetector(this, new GestureDetector.SimpleOnGestureListener() {
-            @Override
-            public boolean onSingleTapUp(MotionEvent e) {
-                return true;
-            }
-        });
-
-        packetListView.addOnItemTouchListener(new RecyclerView.OnItemTouchListener() {
-
-            @Override
-            public boolean onInterceptTouchEvent(RecyclerView rv, MotionEvent e) {
-
-                View childView = rv.findChildViewUnder(e.getX(), e.getY());
-
-                if (childView != null && mGestureDetector.onTouchEvent(e)) {
-
-                    int index = rv.getChildAdapterPosition(childView);
-
-                    final Packet item = packetList.get(index);
-
-                    if (packetAdapter.getSelectedPacket() != item.getNum()) {
-
-                        packetAdapter.setSelectedPacket(item.getNum());
-                        childView.setBackgroundColor(getResources().getColor(R.color.highlight));
-
-                        if (lastSelectedView != null)
-                            lastSelectedView.setBackgroundColor(getResources().getColor(R.color.background));
-
-                        lastSelectedView = childView;
-
-                    } else {
-                        packetAdapter.setSelectedPacket(-1);
-                        childView.setBackgroundColor(getResources().getColor(R.color.background));
-                        packetAdapter.notifyDataSetChanged();
-                    }
-
-                    Log.i(TAG, "item clicked !");
-
-                    return true;
-                }
-
-
-                return false;
-            }
-
-            @Override
-            public void onTouchEvent(RecyclerView rv, MotionEvent e) {
-
-
-            }
-
-            @Override
-            public void onRequestDisallowInterceptTouchEvent(boolean disallowIntercept) {
-
-            }
-        });
-
         packetListView.setAdapter(packetAdapter);
-        //packetListView.setChoiceMode(ListView.CHOICE_MODE_SINGLE);
+        packetListView.addOnItemTouchListener(this);
 
-        packetListView.setOnClickListener(new View.OnClickListener() {
+        mSwipeRefreshLayout = (SwipeRefreshLayout) findViewById(R.id.swiperefresh);
+        mSwipeRefreshLayout.setOnRefreshListener(new SwipeRefreshLayout.OnRefreshListener() {
             @Override
-            public void onClick(View v) {
-                Log.i(TAG, "item clicked !");
-            }
-        });
-        /*
-        packetListView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
-            @Override
-            public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
-
-                final Packet item = (Packet) parent.getItemAtPosition(position);
-
-                if (selectedPacket != item.getNum()) {
-
-                    selectedPacket = item.getNum();
-
-                    displayOrbs();
-
-
-                } else {
-
-                    packetListView.clearChoices();
-
-                    selectedPacket = -1;
-
-                    hideOrbs();
-
-                    //view.setBackgroundColor(Color.parseColor("#e6e6e6"));
-                    packetAdapter.notifyDataSetChanged();
-                }
-
-                Log.i(TAG, "item clicked !");
-            }
-        });
-    */
-        BootstrapButton clear_button = (BootstrapButton) findViewById(R.id.clear_button);
-        clear_button.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                Log.v(TAG, "clearing adapter");
-                runOnUiThread(new Runnable() {
-                    @Override
-                    public void run() {
-                        packetList.clear();
-                        packetFilteredList.clear();
-                        //packetListView.clearChoices();
-                        notifyAdapter();
-
-                        hideOrbs();
-                    }
-                });
+            public void onRefresh() {
+                refresh();
             }
         });
 
-        BootstrapButton refresh_button = (BootstrapButton) findViewById(R.id.refresh_button);
-        refresh_button.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                Log.v(TAG, "refreshing adapter");
-                packetList.clear();
-                packetFilteredList.clear();
-                //packetListView.clearChoices();
-                notifyAdapter();
-                frameCount = 1;
-                stopHciLogStream();
-                pool.execute(decodingTask);
-
-                hideOrbs();
-            }
-        });
-
-        final BootstrapButton scan_button = (BootstrapButton) findViewById(R.id.scan_button);
-        scan_button.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                if (!mScanning) {
-                    Log.v(TAG, "starting scan");
-                    mScanning = true;
-                    scanItemCount = 0;
-                    mBluetoothAdapter.startLeScan(mLeScanCallback);
-                    scan_button.setText("stop scan");
-                } else {
-                    Log.v(TAG, "stopping scan");
-                    mBluetoothAdapter.stopLeScan(mLeScanCallback);
-                    mScanning = false;
-                    scan_button.setText("start scan");
-                }
-            }
-        });
-
-        bluetoothStateBtn = (BootstrapButton) findViewById(R.id.enable_bluetooth);
-
-        if (mBluetoothAdapter.isEnabled()) {
-            bluetoothStateBtn.setText("disable BT");
-        } else {
-            bluetoothStateBtn.setText("enable BT");
-        }
-
-        bluetoothStateBtn.setOnClickListener(new View.OnClickListener() {
-
-            @Override
-            public void onClick(View v) {
-
-                if (mBluetoothAdapter.isEnabled()) {
-                    setBluetooth(false);
-                } else {
-                    setBluetooth(true);
-                }
-            }
-        });
-
-        BootstrapButton filter_button = (BootstrapButton) findViewById(R.id.filter_button);
-
-        filter_button.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-
-                Log.v(TAG, "setting filter");
-                final AlertDialog.Builder dialogBuilder = new AlertDialog.Builder(HciDebuggerActivity.this);
-                dialogBuilder.setCancelable(false);
-
-                LayoutInflater inflater = getLayoutInflater();
-                final View dialogView = inflater.inflate(R.layout.filter_dialog, null);
-                dialogBuilder.setView(dialogView);
-
-                //packet type
-                setupSpinnerAdapter(R.array.packet_type_array, dialogView, R.id.packet_type_filter, filters.getPacketTypeFilter());
-
-                //event type
-                setupSpinnerAdapter(R.array.event_type_array, dialogView, R.id.event_type_filter, filters.getEventTypeFilter());
-
-                //ogf
-                setupSpinnerAdapter(R.array.ogf_array, dialogView, R.id.cmd_ogf_filter, filters.getOgfFilter());
-
-                //subevent_type_filter
-                setupSpinnerAdapter(R.array.subevent_array, dialogView, R.id.subevent_type_filter, filters.getSubeventFilter());
-
-                EditText addressText = (EditText) dialogView.findViewById(R.id.device_address_edit);
-                addressText.addTextChangedListener(new TextWatcher() {
-                    @Override
-                    public void beforeTextChanged(CharSequence s, int start, int count, int after) {
-
-                    }
-
-                    @Override
-                    public void onTextChanged(CharSequence s, int start, int before, int count) {
-
-                        filters.setAddress(s.toString());
-
-                        SharedPreferences.Editor editor = getSharedPreferences(PREFERENCES, MODE_PRIVATE).edit();
-                        editor.putString("advertizingAddr", s.toString());
-                        editor.commit();
-                    }
-
-                    @Override
-                    public void afterTextChanged(Editable s) {
-
-                    }
-                });
-                addressText.setText(filters.getAdvertizingAddr());
-
-                final AlertDialog alertDialog = dialogBuilder.create();
-
-                final Button button_withdraw_filter = (Button) dialogView.findViewById(R.id.button_withdraw_filter);
-
-                if (isFiltered)
-                    button_withdraw_filter.setVisibility(View.VISIBLE);
-                else
-                    button_withdraw_filter.setVisibility(View.GONE);
-
-                button_withdraw_filter.setOnClickListener(new View.OnClickListener() {
-                    @Override
-                    public void onClick(View v) {
-
-                        isFiltered = false;
-                        packetAdapter.setPacketList(packetList);
-                        notifyAdapter();
-
-                        alertDialog.cancel();
-                        alertDialog.dismiss();
-                    }
-                });
-
-                Button button_apply = (Button) dialogView.findViewById(R.id.button_apply_filter);
-
-                button_apply.setOnClickListener(new View.OnClickListener() {
-                    @Override
-                    public void onClick(View v) {
-
-                        Spinner packet_type_filter = (Spinner) dialogView.findViewById(R.id.packet_type_filter);
-                        Spinner ogf_filter = (Spinner) dialogView.findViewById(R.id.cmd_ogf_filter);
-                        Spinner event_type_filter = (Spinner) dialogView.findViewById(R.id.event_type_filter);
-                        Spinner subevent_type_filter = (Spinner) dialogView.findViewById(R.id.subevent_type_filter);
-                        EditText device_address_edit = (EditText) dialogView.findViewById(R.id.device_address_edit);
-
-                        filters = new Filters(packet_type_filter.getSelectedItem().toString(),
-                                event_type_filter.getSelectedItem().toString(),
-                                ogf_filter.getSelectedItem().toString(),
-                                subevent_type_filter.getSelectedItem().toString(),
-                                device_address_edit.getText().toString());
-
-                        packetFilteredList = new ArrayList<Packet>();
-                        for (int i = 0; i < packetList.size(); i++) {
-
-                            if (matchFilter(packetList.get(i))) {
-                                packetFilteredList.add(packetList.get(i));
-                            }
-                        }
-                        Log.i(TAG, "new size : " + packetFilteredList.size());
-
-                        isFiltered = true;
-
-                        packetAdapter.setPacketList(packetFilteredList);
-                        notifyAdapter();
-
-                        alertDialog.cancel();
-                        alertDialog.dismiss();
-                    }
-                });
-
-                Button button_cancel = (Button) dialogView.findViewById(R.id.button_cancel_filter);
-
-                button_cancel.setOnClickListener(new View.OnClickListener() {
-                    @Override
-                    public void onClick(View v) {
-                        alertDialog.cancel();
-                        alertDialog.dismiss();
-                    }
-                });
-
-                alertDialog.show();
-            }
-        });
-
+        //register bluetooth receiver
         IntentFilter intentFilter = new IntentFilter();
         intentFilter.addAction(BluetoothAdapter.ACTION_STATE_CHANGED);
+        intentFilter.addAction(BluetoothAdapter.ACTION_DISCOVERY_FINISHED);
+        intentFilter.addAction(BluetoothAdapter.ACTION_DISCOVERY_STARTED);
 
-        registerReceiver(bluetoothBroadcastReceiver, intentFilter);
+        registerReceiver(mBroadcastReceiver, intentFilter);
+
+        final FloatingActionButton upFloatingBtn = (FloatingActionButton) findViewById(R.id.updown_btn);
+        upFloatingBtn.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                // Click action
+                if (floatBtnDown) {
+                    packetListView.scrollToPosition(packetListView.getAdapter().getItemCount() - 1);
+                    floatBtnDown = false;
+                    upFloatingBtn.setImageResource(R.drawable.ic_arrow_upward);
+                } else {
+                    packetListView.scrollToPosition(0);
+                    floatBtnDown = true;
+                    upFloatingBtn.setImageResource(R.drawable.ic_arrow_downward);
+                }
+
+            }
+        });
 
         pool.execute(decodingTask);
     }
 
-    private ActionBarDrawerToggle setupDrawerToggle() {
-        return new ActionBarDrawerToggle(this, mDrawer, toolbar, R.string.drawer_open, R.string.drawer_close);
+    private void clearAdapter() {
+        Log.v(TAG, "clearing adapter");
+        runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+                packetList.clear();
+                packetFilteredList.clear();
+                //packetListView.clearChoices();
+                notifyAdapter();
+            }
+        });
+    }
+
+    private void toggleScan(MenuItem item) {
+        if (!mScanning) {
+            Log.v(TAG, "starting scan");
+            if (!mBluetoothAdapter.isEnabled()) {
+                startScan = true;
+                setBluetooth(true);
+            } else {
+                startScan();
+            }
+        } else {
+            Log.v(TAG, "stopping scan");
+            mBluetoothAdapter.stopLeScan(mLeScanCallback);
+            mScanning = false;
+            //scan_button.setText("start scan");
+            item.setIcon(R.drawable.ic_action_scanning);
+            item.setTitle("enable bluetooth");
+            Toast.makeText(HciDebuggerActivity.this, "scan has stopped", Toast.LENGTH_SHORT).show();
+        }
+    }
+
+    private void startScan() {
+        mScanning = true;
+        scanItemCount = 0;
+        mBluetoothAdapter.startLeScan(mLeScanCallback);
+        //scan_button.setText("stop scan");
+        MenuItem item = toolbar.getMenu().findItem(R.id.scan_btn);
+        item.setIcon(R.drawable.ic_portable_wifi_off);
+        item.setTitle("disable bluetooth");
+        Toast.makeText(HciDebuggerActivity.this, "scan has started", Toast.LENGTH_SHORT).show();
+    }
+
+    private void toggleBtState() {
+        if (mBluetoothAdapter.isEnabled()) {
+            setBluetooth(false);
+        } else {
+            setBluetooth(true);
+        }
+    }
+
+    private void filter() {
+        Log.v(TAG, "setting filter");
+        final AlertDialog.Builder dialogBuilder = new AlertDialog.Builder(HciDebuggerActivity.this);
+        //dialogBuilder.setCancelable(false);
+
+        LayoutInflater inflater = getLayoutInflater();
+        final View dialogView = inflater.inflate(R.layout.filter_dialog, null);
+        dialogBuilder.setView(dialogView);
+
+        //packet type
+        setupSpinnerAdapter(R.array.packet_type_array, dialogView, R.id.packet_type_filter, filters.getPacketTypeFilter());
+
+        //event type
+        setupSpinnerAdapter(R.array.event_type_array, dialogView, R.id.event_type_filter, filters.getEventTypeFilter());
+
+        //ogf
+        setupSpinnerAdapter(R.array.ogf_array, dialogView, R.id.cmd_ogf_filter, filters.getOgfFilter());
+
+        //subevent_type_filter
+        setupSpinnerAdapter(R.array.subevent_array, dialogView, R.id.subevent_type_filter, filters.getSubeventFilter());
+
+        EditText addressText = (EditText) dialogView.findViewById(R.id.device_address_edit);
+        addressText.addTextChangedListener(new TextWatcher() {
+            @Override
+            public void beforeTextChanged(CharSequence s, int start, int count, int after) {
+
+            }
+
+            @Override
+            public void onTextChanged(CharSequence s, int start, int before, int count) {
+
+                filters.setAddress(s.toString());
+
+                SharedPreferences.Editor editor = getSharedPreferences(Constants.PREFERENCES, MODE_PRIVATE).edit();
+                editor.putString("advertizingAddr", s.toString());
+                editor.commit();
+            }
+
+            @Override
+            public void afterTextChanged(Editable s) {
+
+            }
+        });
+        addressText.setText(filters.getAdvertizingAddr());
+
+        final AlertDialog alertDialog = dialogBuilder.create();
+
+        final Button button_withdraw_filter = (Button) dialogView.findViewById(R.id.button_withdraw_filter);
+
+        if (isFiltered)
+            button_withdraw_filter.setVisibility(View.VISIBLE);
+        else
+            button_withdraw_filter.setVisibility(View.GONE);
+
+        button_withdraw_filter.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+
+                isFiltered = false;
+                packetAdapter.setPacketList(packetList);
+                notifyAdapter();
+
+                alertDialog.cancel();
+                alertDialog.dismiss();
+                packetFilteredList.clear();
+            }
+        });
+
+        Button button_apply = (Button) dialogView.findViewById(R.id.button_apply_filter);
+
+        button_apply.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+
+                Spinner packet_type_filter = (Spinner) dialogView.findViewById(R.id.packet_type_filter);
+                Spinner ogf_filter = (Spinner) dialogView.findViewById(R.id.cmd_ogf_filter);
+                Spinner event_type_filter = (Spinner) dialogView.findViewById(R.id.event_type_filter);
+                Spinner subevent_type_filter = (Spinner) dialogView.findViewById(R.id.subevent_type_filter);
+                EditText device_address_edit = (EditText) dialogView.findViewById(R.id.device_address_edit);
+
+                filters = new Filters(packet_type_filter.getSelectedItem().toString(),
+                        event_type_filter.getSelectedItem().toString(),
+                        ogf_filter.getSelectedItem().toString(),
+                        subevent_type_filter.getSelectedItem().toString(),
+                        device_address_edit.getText().toString());
+
+                packetFilteredList = new ArrayList<Packet>();
+                for (int i = 0; i < packetList.size(); i++) {
+
+                    if (matchFilter(packetList.get(i))) {
+                        packetFilteredList.add(packetList.get(i));
+                    }
+                }
+                Log.i(TAG, "new size : " + packetFilteredList.size());
+
+                isFiltered = true;
+
+                packetAdapter.setPacketList(packetFilteredList);
+                notifyAdapter();
+
+                alertDialog.cancel();
+                alertDialog.dismiss();
+            }
+        });
+
+        Button button_cancel = (Button) dialogView.findViewById(R.id.button_cancel_filter);
+
+        button_cancel.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                alertDialog.cancel();
+                alertDialog.dismiss();
+            }
+        });
+
+        alertDialog.show();
+    }
+
+    public void refresh() {
+        Log.v(TAG, "refreshing adapter");
+        packetList.clear();
+        packetFilteredList.clear();
+        //packetListView.clearChoices();
+        notifyAdapter();
+        frameCount = 1;
+        stopHciLogStream();
+        pool.execute(decodingTask);
+        mSwipeRefreshLayout.setRefreshing(false);
     }
 
     @Override
-    public boolean onOptionsItemSelected(MenuItem item) {
-        // The action bar home/up action should open or close the drawer.
-        switch (item.getItemId()) {
-            case android.R.id.home:
-                mDrawer.openDrawer(GravityCompat.START);
-                return true;
-        }
-
-        return super.onOptionsItemSelected(item);
+    public Context getContext() {
+        return this;
     }
 
-    // Make sure this is the method with just `Bundle` as the signature
+    private BroadcastReceiver mBroadcastReceiver = new BroadcastReceiver() {
+        @Override
+        public void onReceive(Context context, Intent intent) {
+
+            final String action = intent.getAction();
+
+            if (BluetoothAdapter.ACTION_DISCOVERY_FINISHED.equals(action)) {
+                runOnUiThread(new Runnable() {
+                    @Override
+                    public void run() {
+                        MenuItem item = toolbar.getMenu().findItem(R.id.scan_btn);
+                        if (item != null) {
+                            item.setIcon(R.drawable.ic_action_scanning);
+                            item.setTitle("start scan");
+                            Toast.makeText(HciDebuggerActivity.this, "scan has stopped", Toast.LENGTH_SHORT).show();
+                        }
+                    }
+                });
+            } else if (BluetoothAdapter.ACTION_DISCOVERY_STARTED.equals(action)) {
+                runOnUiThread(new Runnable() {
+                    @Override
+                    public void run() {
+                        MenuItem item = toolbar.getMenu().findItem(R.id.scan_btn);
+                        if (item != null) {
+                            item.setIcon(R.drawable.ic_portable_wifi_off);
+                            item.setTitle("stop scan");
+                            Toast.makeText(HciDebuggerActivity.this, "scan has started", Toast.LENGTH_SHORT).show();
+                        }
+                    }
+                });
+            } else if (action.equals(BluetoothAdapter.ACTION_STATE_CHANGED)) {
+
+                final int state = intent.getIntExtra(BluetoothAdapter.EXTRA_STATE,
+                        BluetoothAdapter.ERROR);
+
+                if (state == BluetoothAdapter.STATE_OFF) {
+                    runOnUiThread(new Runnable() {
+                        @Override
+                        public void run() {
+                            MenuItem item = toolbar.getMenu().findItem(R.id.state_bt_btn);
+                            if (item != null) {
+                                item.setIcon(R.drawable.ic_bluetooth_disabled);
+                                item.setTitle("enable bluetooth");
+                                Toast.makeText(HciDebuggerActivity.this, "bluetooth disabled", Toast.LENGTH_SHORT).show();
+                            }
+                        }
+                    });
+                } else if (state == BluetoothAdapter.STATE_ON) {
+                    runOnUiThread(new Runnable() {
+                        @Override
+                        public void run() {
+                            MenuItem item = toolbar.getMenu().findItem(R.id.state_bt_btn);
+                            if (item != null) {
+                                item.setIcon(R.drawable.ic_bluetooth);
+                                item.setTitle("disable bluetooth");
+                                Toast.makeText(HciDebuggerActivity.this, "bluetooth enabled", Toast.LENGTH_SHORT).show();
+                            }
+                            if (startScan) {
+                                startScan();
+                                startScan = false;
+                            }
+                        }
+                    });
+                }
+            }
+        }
+    };
+
     @Override
-    protected void onPostCreate(Bundle savedInstanceState) {
-        super.onPostCreate(savedInstanceState);
-        drawerToggle.syncState();
+    public boolean onCreateOptionsMenu(Menu menu) {
+        this.getMenuInflater().inflate(R.menu.toolbar_menu, menu);
+
+        MenuItem item = menu.findItem(R.id.clear_btn);
+        if (item != null) {
+            item.setOnMenuItemClickListener(new MenuItem.OnMenuItemClickListener() {
+
+                @Override
+                public boolean onMenuItemClick(MenuItem item) {
+                    clearAdapter();
+                    return true;
+                }
+            });
+        }
+
+        item = menu.findItem(R.id.scan_btn);
+        if (item != null) {
+            item.setIcon(R.drawable.ic_action_scanning);
+            item.setOnMenuItemClickListener(new MenuItem.OnMenuItemClickListener() {
+
+                @Override
+                public boolean onMenuItemClick(MenuItem item) {
+                    toggleScan(item);
+                    return true;
+                }
+            });
+        }
+
+        item = menu.findItem(R.id.state_bt_btn);
+        if (item != null) {
+            item.setOnMenuItemClickListener(new MenuItem.OnMenuItemClickListener() {
+
+                @Override
+                public boolean onMenuItemClick(MenuItem item) {
+                    toggleBtState();
+                    return true;
+                }
+            });
+            if (mBluetoothAdapter.isEnabled()) {
+                item.setIcon(R.drawable.ic_bluetooth);
+            } else {
+                item.setIcon(R.drawable.ic_bluetooth_disabled);
+            }
+        }
+        item = menu.findItem(R.id.filter_btn);
+        if (item != null) {
+            item.setOnMenuItemClickListener(new MenuItem.OnMenuItemClickListener() {
+
+                @Override
+                public boolean onMenuItemClick(MenuItem item) {
+                    filter();
+                    return true;
+                }
+            });
+        }
+
+        item = menu.findItem(R.id.refresh);
+        if (item != null) {
+            if (getResources().getConfiguration().orientation != Configuration.ORIENTATION_PORTRAIT) {
+
+                item.setOnMenuItemClickListener(new MenuItem.OnMenuItemClickListener() {
+
+                    @Override
+                    public boolean onMenuItemClick(MenuItem item) {
+                        refresh();
+                        return true;
+                    }
+                });
+            } else {
+                item.setVisible(false);
+            }
+        }
+
+        return super.onCreateOptionsMenu(menu);
     }
 
-    private void displayOrbs() {
-        /*
-        if ((snoop_frame_text.getVisibility() == View.GONE) &&
-                (hci_frame_text.getVisibility() == View.GONE)) {
+    private void setupDrawerContent(NavigationView navigationView) {
 
-            snoop_frame_text.setVisibility(View.VISIBLE);
-            hci_frame_text.setVisibility(View.VISIBLE);
-            snoop_frame_text.startAnimation(fadein);
-            hci_frame_text.startAnimation(fadein);
-        }
-        */
-    }
-
-    private void hideOrbs() {
-        /*
-        if ((snoop_frame_text.getVisibility() == View.VISIBLE) &&
-                (hci_frame_text.getVisibility() == View.VISIBLE)) {
-            snoop_frame_text.startAnimation(fadeout);
-            hci_frame_text.startAnimation(fadeout);
-            snoop_frame_text.setVisibility(View.GONE);
-            hci_frame_text.setVisibility(View.GONE);
-        }
-        */
-
+        navigationView.setNavigationItemSelectedListener(
+                new NavigationView.OnNavigationItemSelectedListener() {
+                    @Override
+                    public boolean onNavigationItemSelected(MenuItem menuItem) {
+                        MenuUtils.selectDrawerItem(menuItem, mDrawer, HciDebuggerActivity.this, HciDebuggerActivity.this);
+                        return true;
+                    }
+                });
     }
 
     private boolean matchFilter(Packet packet) {
@@ -732,7 +758,7 @@ public class HciDebuggerActivity extends AppCompatActivity {
 
                 if (!sItems.getSelectedItem().toString().equals("Choose")) {
 
-                    SharedPreferences.Editor editor = getSharedPreferences(PREFERENCES, MODE_PRIVATE).edit();
+                    SharedPreferences.Editor editor = getSharedPreferences(Constants.PREFERENCES, MODE_PRIVATE).edit();
 
                     if (ressourceId == R.array.packet_type_array) {
 
@@ -833,32 +859,6 @@ public class HciDebuggerActivity extends AppCompatActivity {
         device_address_edit.setVisibility(View.GONE);
     }
 
-    private final BroadcastReceiver bluetoothBroadcastReceiver = new BroadcastReceiver() {
-
-        @Override
-        public void onReceive(Context context, Intent intent) {
-
-            final String action = intent.getAction();
-
-            if (action.equals(BluetoothAdapter.ACTION_STATE_CHANGED)) {
-
-                final int state = intent.getIntExtra(BluetoothAdapter.EXTRA_STATE,
-                        BluetoothAdapter.ERROR);
-
-                if (state == BluetoothAdapter.STATE_OFF) {
-
-                    Log.e(TAG, "Bluetooth state change to STATE_OFF");
-                    bluetoothStateBtn.setText("enable BT");
-
-                } else if (state == BluetoothAdapter.STATE_ON) {
-                    Log.e(TAG, "Bluetooth state change to STATE_ON");
-                    bluetoothStateBtn.setText("disable BT");
-
-                }
-            }
-        }
-    };
-
     private boolean setBluetooth(boolean state) {
 
         boolean isEnabled = mBluetoothAdapter.isEnabled();
@@ -886,22 +886,19 @@ public class HciDebuggerActivity extends AppCompatActivity {
     @Override
     protected void onResume() {
         super.onResume();
-        Log.v(TAG, "onResume()");
     }
 
     @Override
     protected void onPause() {
         super.onPause();
-        Log.v(TAG, "onPause()");
     }
 
 
     @Override
     protected void onDestroy() {
         super.onDestroy();
-        Log.v(TAG, "onDestroy()");
         frameCount = 1;
-        unregisterReceiver(bluetoothBroadcastReceiver);
+        unregisterReceiver(mBroadcastReceiver);
         stopHciLogStream();
     }
 
@@ -939,8 +936,24 @@ public class HciDebuggerActivity extends AppCompatActivity {
         return "";
     }
 
-    public void onHciFrameReceived(String snoopFrame, String hciFrame) {
+    public void onFinishedPacketCount(int packetCount) {
+        Log.i(TAG, "onFinishedPacketCount " + packetCount);
+        mPacketCount = packetCount;
+        runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+                mWaitingFrame.setVisibility(View.GONE);
+                mDisplayFrame.setVisibility(View.VISIBLE);
+            }
+        });
 
+    }
+
+    public void onHciFrameReceived(final String snoopFrame, final String hciFrame) {
+
+        if (frameCount > mMaxPacketCount) {
+            mPacketCount++;
+        }
         //Log.v(TAG, "new frame | SNOOP : " + snoopFrame + " | HCI : " + hciFrame);
 
         try {
@@ -998,7 +1011,7 @@ public class HciDebuggerActivity extends AppCompatActivity {
                                 @Override
                                 public void run() {
 
-                                    Packet packet = new PacketHciLEAdvertizing(frameCount++, timestamp, finalDest, type, eventType, subevent_code_val, reportList);
+                                    Packet packet = new PacketHciLEAdvertizing(frameCount++, timestamp, finalDest, type, eventType, subevent_code_val, reportList, hciFrame, snoopFrame);
 
                                     packetList.add(0, packet);
 
@@ -1018,7 +1031,7 @@ public class HciDebuggerActivity extends AppCompatActivity {
                     @Override
                     public void run() {
 
-                        Packet packet = new PacketHciEvent(frameCount++, timestamp, finalDest, type, eventType);
+                        Packet packet = new PacketHciEvent(frameCount++, timestamp, finalDest, type, eventType, hciFrame, snoopFrame);
 
                         packetList.add(0, packet);
 
@@ -1048,7 +1061,7 @@ public class HciDebuggerActivity extends AppCompatActivity {
                     @Override
                     public void run() {
 
-                        Packet packet = new PacketHciCmd(frameCount++, timestamp, finalDest, type, ocf, ogf);
+                        Packet packet = new PacketHciCmd(frameCount++, timestamp, finalDest, type, ocf, ogf, hciFrame, snoopFrame);
 
                         packetList.add(0, packet);
 
@@ -1064,7 +1077,7 @@ public class HciDebuggerActivity extends AppCompatActivity {
                     @Override
                     public void run() {
 
-                        Packet packet = new PacketHciAclData(frameCount++, timestamp, finalDest, type);
+                        Packet packet = new PacketHciAclData(frameCount++, timestamp, finalDest, type, hciFrame, snoopFrame);
 
                         packetList.add(0, packet);
 
@@ -1081,7 +1094,7 @@ public class HciDebuggerActivity extends AppCompatActivity {
                     @Override
                     public void run() {
 
-                        Packet packet = new PacketHciScoData(frameCount++, timestamp, finalDest, type);
+                        Packet packet = new PacketHciScoData(frameCount++, timestamp, finalDest, type, hciFrame, snoopFrame);
 
                         packetList.add(0, packet);
 
@@ -1105,10 +1118,61 @@ public class HciDebuggerActivity extends AppCompatActivity {
      * Edit frame count text view and refresh adapter
      */
     private void notifyAdapter() {
-
-        TextView frameCountView = (TextView) findViewById(R.id.filter_count);
-        frameCountView.setText(packetAdapter.getItemCount() + " /" + (frameCount - 1));
+        MenuItem item = toolbar.getMenu().findItem(R.id.packet_number_entry);
+        if (item != null) {
+            item.setTitle(packetAdapter.getItemCount() + "/" + mPacketCount);
+        }
         packetAdapter.notifyDataSetChanged();
     }
 
+    @Override
+    public boolean onInterceptTouchEvent(RecyclerView rv, MotionEvent e) {
+        View childView = rv.findChildViewUnder(e.getX(), e.getY());
+
+        if (childView != null && mGestureDetector.onTouchEvent(e)) {
+            int index = rv.getChildAdapterPosition(childView);
+
+            Intent intent = new Intent(this, DescriptionActivity.class);
+
+            if (packetFilteredList.size() != 0) {
+                intent.putExtra("hci_packet", packetFilteredList.get(index).getJsonFormattedHciPacket());
+                intent.putExtra("snoop_packet", packetFilteredList.get(index).getJsonFormattedSnoopPacket());
+                intent.putExtra("packet_number", packetFilteredList.get(index).getNum());
+                intent.putExtra("packet_ts", timestampFormat.format(packetFilteredList.get(index).getTimestamp().getTime()));
+                intent.putExtra("packet_type", packetFilteredList.get(index).getDisplayedType());
+                intent.putExtra("packet_dest", packetFilteredList.get(index).getDest().toString());
+            } else {
+                intent.putExtra("hci_packet", packetList.get(index).getJsonFormattedHciPacket());
+                intent.putExtra("snoop_packet", packetList.get(index).getJsonFormattedSnoopPacket());
+                intent.putExtra("packet_number", packetList.get(index).getNum());
+                intent.putExtra("packet_ts", timestampFormat.format(packetList.get(index).getTimestamp().getTime()));
+                intent.putExtra("packet_type", packetList.get(index).getDisplayedType());
+                intent.putExtra("packet_dest", packetList.get(index).getDest().toString());
+            }
+            startActivity(intent);
+            return true;
+        }
+
+        return false;
+    }
+
+    @Override
+    public void onTouchEvent(RecyclerView rv, MotionEvent e) {
+
+    }
+
+    @Override
+    public void onRequestDisallowInterceptTouchEvent(boolean disallowIntercept) {
+
+    }
+
+    @Override
+    public void onRefresh() {
+
+    }
+
+    @Override
+    public void setMaxPacketValue(int maxPacketValue) {
+        mMaxPacketCount = maxPacketValue;
+    }
 }

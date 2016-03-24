@@ -11,8 +11,8 @@ public class PacketHciEvent extends Packet {
 
     private String displayedInfo = "";
 
-    public PacketHciEvent(int num, Date timestamp, PacketDest dest, ValuePair type, ValuePair eventType) {
-        super(num, timestamp, dest, type);
+    public PacketHciEvent(int num, Date timestamp, PacketDest dest, ValuePair type, ValuePair eventType, String jsonFormattedHciPacket, String jsonFormattedSnoopPacket) {
+        super(num, timestamp, dest, type, jsonFormattedHciPacket, jsonFormattedSnoopPacket);
 
         this.eventType = eventType;
         this.displayedInfo = eventType.getValue().replace("HCI_EVENT_", "");

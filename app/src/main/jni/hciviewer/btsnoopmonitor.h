@@ -59,6 +59,18 @@ public:
 	 */
 	void onSnoopPacketReceived(BtSnoopFileInfo fileInfo,BtSnoopPacket packet,JNIEnv * jni_env);
 
+	/**
+	 * @brief
+	 * 		called when packet counting is completed
+	 * @param
+	 *		total packet number
+	 */
+	void onFinishedCountingPackets(int packet_count,JNIEnv * jni_env);
+	
+	static jobject jobj;
+	static jmethodID mid;
+	static jmethodID mid_counting;
+
 private:
 
 	int count;

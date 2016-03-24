@@ -42,18 +42,23 @@ static BtSnoopParser *parser_ptr;
 
 extern "C" {
 
-JNIEXPORT void JNICALL Java_fr_bmartel_bluetooth_hcidebugger_activity_HciDebuggerActivity_startHciLogStream(JNIEnv* env, jobject obj,jstring filePath)
+JNIEXPORT void JNICALL Java_fr_bmartel_bluetooth_hcidebugger_activity_HciDebuggerActivity_startHciLogStream(JNIEnv* env, jobject obj,jstring filePath,jint lastPacketCount)
 {
-	BtSnoopTask::jobj = env->NewGlobalRef(obj);
+	BtSnoopMonitor::jobj = env->NewGlobalRef(obj);
 
 	// save refs for callback
-	jclass g_clazz = env->GetObjectClass(BtSnoopTask::jobj);
+	jclass g_clazz = env->GetObjectClass(BtSnoopMonitor::jobj);
 	if (g_clazz == NULL) {
 		__android_log_print(ANDROID_LOG_ERROR,"startHciLogStream","Failed to find class\n");
 	}
 
-	BtSnoopTask::mid = env->GetMethodID(g_clazz, "onHciFrameReceived", "(Ljava/lang/String;Ljava/lang/String;)V");
-	if (BtSnoopTask::mid == NULL) {
+	BtSnoopMonitor::mid = env->GetMethodID(g_clazz, "onHciFrameReceived", "(Ljava/lang/String;Ljava/lang/String;)V");
+	if (BtSnoopMonitor::mid == NULL) {
+		__android_log_print(ANDROID_LOG_ERROR,"startHciLogStream","Unable to get method ref\n");
+	}
+
+	BtSnoopMonitor::mid_counting= env->GetMethodID(g_clazz, "onFinishedPacketCount", "(I)V");
+	if (BtSnoopMonitor::mid == NULL) {
 		__android_log_print(ANDROID_LOG_ERROR,"startHciLogStream","Unable to get method ref\n");
 	}
 
@@ -70,8 +75,7 @@ JNIEXPORT void JNICALL Java_fr_bmartel_bluetooth_hcidebugger_activity_HciDebugge
 	
 	__android_log_print(ANDROID_LOG_VERBOSE,"startHciLogStream","opening HCI log file in %s\n",filePathStr.data());
 
-	bool success = parser.decode_streaming_file(filePathStr);
-	//bool success = parser.decode_streaming_file("/sdcard/btsnoop_hci.log");
+	bool success = parser.decode_streaming_file(filePathStr,lastPacketCount);
 
 	if (success){
 	    //success

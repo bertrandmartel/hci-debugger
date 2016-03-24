@@ -41,6 +41,10 @@
 
 using namespace std;
 
+jobject   BtSnoopMonitor::jobj;
+jmethodID BtSnoopMonitor::mid;
+jmethodID BtSnoopMonitor::mid_counting;
+
 BtSnoopMonitor::BtSnoopMonitor()
 {
 	count=0;
@@ -48,6 +52,32 @@ BtSnoopMonitor::BtSnoopMonitor()
 }
 
 BtSnoopMonitor::~BtSnoopMonitor(){
+}
+
+/**
+ * @brief
+ * 		called when packet counting is completed
+ * @param packet_count
+ * 		total packet number
+ */
+void BtSnoopMonitor::onFinishedCountingPackets(int packet_count,JNIEnv * jni_env){
+
+	if (jni_env!=0){
+		if (BtSnoopMonitor::jobj!=0 && BtSnoopMonitor::mid_counting!=0){
+
+			jni_env->CallVoidMethod(BtSnoopMonitor::jobj, BtSnoopMonitor::mid_counting,packet_count);
+
+			if (jni_env->ExceptionCheck()) {
+				jni_env->ExceptionDescribe();
+			}
+		}
+		else{
+			__android_log_print(ANDROID_LOG_ERROR,"hci-debugger","class or method if not defined\n");
+		}
+	}
+	else{
+		__android_log_print(ANDROID_LOG_ERROR,"hci-debugger","jni_env is not defined\n");
+	}
 }
 
 /**
@@ -92,13 +122,13 @@ void BtSnoopMonitor::onSnoopPacketReceived(BtSnoopFileInfo fileInfo,BtSnoopPacke
 		*/
 
 		if (jni_env!=0){
-			if (BtSnoopTask::jobj!=0 && BtSnoopTask::mid!=0){
+			if (BtSnoopMonitor::jobj!=0 && BtSnoopMonitor::mid!=0){
 
 				jstring hci_frame = jni_env->NewStringUTF(frame->toJson(false).data());
 
 				jstring snoop_frame = jni_env->NewStringUTF(packet.toJson(false).data());
 
-				jni_env->CallVoidMethod(BtSnoopTask::jobj, BtSnoopTask::mid, snoop_frame,hci_frame);
+				jni_env->CallVoidMethod(BtSnoopMonitor::jobj, BtSnoopMonitor::mid, snoop_frame,hci_frame);
 
 				jni_env->DeleteLocalRef(hci_frame);
 				jni_env->DeleteLocalRef(snoop_frame);

@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto">
+
+    <item
+        android:id="@+id/packet_number_entry"
+        android:title=""
+        app:showAsAction="always" />
+    <item
+        android:id="@+id/clear_btn"
+        android:icon="@drawable/ic_action_trash"
+        android:title="clear"
+        app:showAsAction="always" />
+    <item
+        android:id="@+id/scan_btn"
+        android:icon="@drawable/ic_action_scanning"
+        android:title="scan"
+        app:showAsAction="always" />
+    <item
+        android:id="@+id/state_bt_btn"
+        android:icon="@drawable/ic_bluetooth_disabled"
+        android:title="disable bluetooth"
+        app:showAsAction="always" />
+    <item
+        android:id="@+id/filter_btn"
+        android:icon="@drawable/ic_action_filter"
+        android:title="filter"
+        app:showAsAction="always" />
+    <item
+        android:id="@+id/refresh"
+        android:icon="@drawable/ic_settings_backup_restore"
+        android:title="refresh"
+        app:showAsAction="always" />
+</menu>

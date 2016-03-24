@@ -7,8 +7,8 @@ import java.util.Date;
  */
 public class PacketHciAclData extends Packet {
 
-    public PacketHciAclData(int num, Date timestamp, PacketDest dest, ValuePair type) {
-        super(num, timestamp, dest, type);
+    public PacketHciAclData(int num, Date timestamp, PacketDest dest, ValuePair type, String jsonFormattedHciPacket, String jsonFormattedSnoopPacket) {
+        super(num, timestamp, dest, type, jsonFormattedHciPacket, jsonFormattedSnoopPacket);
     }
 
     @Override

@@ -12,13 +12,17 @@ public abstract class Packet implements IPacket {
     private ValuePair type;
     private int num;
     private String displayedType = "";
+    private String jsonFormattedHciPacket = "";
+    private String jsonFormattedSnoopPacket = "";
 
-    public Packet(int num, Date timestamp, PacketDest dest, ValuePair type) {
+    public Packet(int num, Date timestamp, PacketDest dest, ValuePair type, String jsonFormattedHciPacket, String jsonFormattedSnoopPacket) {
         this.timestamp = timestamp;
         this.dest = dest;
         this.type = type;
         this.num = num;
         displayedType = type.getValue().replace("HCI_TYPE_", "");
+        this.jsonFormattedHciPacket = jsonFormattedHciPacket;
+        this.jsonFormattedSnoopPacket = jsonFormattedSnoopPacket;
     }
 
     public Date getTimestamp() {
@@ -39,5 +43,13 @@ public abstract class Packet implements IPacket {
 
     public String getDisplayedType() {
         return displayedType;
+    }
+
+    public String getJsonFormattedHciPacket() {
+        return jsonFormattedHciPacket;
+    }
+
+    public String getJsonFormattedSnoopPacket() {
+        return jsonFormattedSnoopPacket;
     }
 }

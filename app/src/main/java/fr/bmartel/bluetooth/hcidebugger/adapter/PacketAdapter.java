@@ -1,10 +1,12 @@
 package fr.bmartel.bluetooth.hcidebugger.adapter;
 
 import android.content.Context;
+import android.content.res.Configuration;
 import android.support.v7.widget.RecyclerView;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 
@@ -14,6 +16,7 @@ import java.util.List;
 
 import fr.bmartel.bluetooth.hcidebugger.R;
 import fr.bmartel.bluetooth.hcidebugger.model.Packet;
+import fr.bmartel.bluetooth.hcidebugger.model.PacketDest;
 
 public class PacketAdapter extends RecyclerView.Adapter<PacketAdapter.ViewHolder> {
 
@@ -34,7 +37,12 @@ public class PacketAdapter extends RecyclerView.Adapter<PacketAdapter.ViewHolder
 
     @Override
     public PacketAdapter.ViewHolder onCreateViewHolder(ViewGroup parent, int viewType) {
-        View v = LayoutInflater.from(parent.getContext()).inflate(R.layout.packet_item, parent, false);
+        View v;
+        if (context.getResources().getConfiguration().orientation == Configuration.ORIENTATION_PORTRAIT) {
+            v = LayoutInflater.from(parent.getContext()).inflate(R.layout.packet_item_portrait, parent, false);
+        } else {
+            v = LayoutInflater.from(parent.getContext()).inflate(R.layout.packet_item, parent, false);
+        }
         return new ViewHolder(v);
     }
 
@@ -46,11 +54,10 @@ public class PacketAdapter extends RecyclerView.Adapter<PacketAdapter.ViewHolder
         holder.packet_timestamp.setText(timestampFormat.format(item.getTimestamp()));
         holder.packet_type.setText(item.getDisplayedType());
         holder.packet_info.setText(item.getDisplayedInfo());
-
-        if (item.getNum() != selectedPacket)
-            holder.layout.setBackgroundColor(context.getResources().getColor((R.color.background)));
+        if (item.getDest() == PacketDest.PACKET_RECEIVED)
+            holder.packet_dest.setImageDrawable(context.getResources().getDrawable(R.drawable.ic_trending_down));
         else
-            holder.layout.setBackgroundColor(context.getResources().getColor(R.color.highlight));
+            holder.packet_dest.setImageDrawable(context.getResources().getDrawable(R.drawable.ic_trending_up));
     }
 
     public List<Packet> getPacketList() {
@@ -86,6 +93,7 @@ public class PacketAdapter extends RecyclerView.Adapter<PacketAdapter.ViewHolder
         public TextView packet_timestamp;
         public TextView packet_type;
         public TextView packet_info;
+        public ImageView packet_dest;
 
         public ViewHolder(View v) {
             super(v);
@@ -93,6 +101,7 @@ public class PacketAdapter extends RecyclerView.Adapter<PacketAdapter.ViewHolder
             packet_timestamp = (TextView) v.findViewById(R.id.packet_timestamp);
             packet_type = (TextView) v.findViewById(R.id.packet_type);
             packet_info = (TextView) v.findViewById(R.id.packet_info);
+            packet_dest = (ImageView) v.findViewById(R.id.packet_dest);
             layout = (LinearLayout) v.findViewById(R.id.packet_item);
         }
     }

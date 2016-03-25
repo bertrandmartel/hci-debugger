@@ -1,6 +1,6 @@
 # Add project specific ProGuard rules here.
 # By default, the flags in this file are appended to flags specified
-# in /home/abathur/android-sdk-linux/tools/proguard/proguard-android.txt
+# in C:\Users\iLab\AppData\Local\Android\sdk/tools/proguard/proguard-android.txt
 # You can edit the include path and order by changing the proguardFiles
 # directive in build.gradle.
 #
@@ -15,3 +15,35 @@
 #-keepclassmembers class fqcn.of.javascript.interface.for.webview {
 #   public *;
 #}
+-useuniqueclassmembernames
+-keepattributes SourceFile,LineNumberTable
+-allowaccessmodification
+
+-dontwarn android.**
+-dontwarn org.**
+-dontwarn javax.**
+
+-keep class com.google.gdata.** { *; }
+
+-keepnames class * implements java.io.Serializable
+
+-keepclassmembers class * implements java.io.Serializable {
+    static final long serialVersionUID;
+    private static final java.io.ObjectStreamField[] serialPersistentFields;
+    !static !transient <fields>;
+    !private <fields>;
+    !private <methods>;
+    private void writeObject(java.io.ObjectOutputStream);
+    private void readObject(java.io.ObjectInputStream);
+    java.lang.Object writeReplace();
+    java.lang.Object readResolve();
+}
+-keepclassmembers class * extends com.google.gdata.model.Element {
+    public static com.google.gdata.model.ElementKey KEY;
+    public static void registerMetadata(com.google.gdata.model.MetadataRegistry);
+}
+-keep class com.github.akinaru.hcidebugger.activity.HciDebuggerActivity { *; }
+
+-keepclassmembers,allowobfuscation class com.github.akinaru.hcidebugger.activity.HciDebuggerActivity.** {
+    <methods>;
+}

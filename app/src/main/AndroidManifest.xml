@@ -1,8 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-    package="fr.bmartel.bluetooth.hcidebugger"
-    android:versionCode="1"
-    android:versionName="1.0">
+    package="com.github.akinaru.hcidebugger">
 
     <uses-permission android:name="android.permission.BLUETOOTH" />
     <uses-permission android:name="android.permission.BLUETOOTH_ADMIN" />
@@ -13,7 +11,7 @@
         android:theme="@style/AppTheme">
 
         <activity
-            android:name=".activity.HciDebuggerActivity"
+            android:name="com.github.akinaru.hcidebugger.activity.HciDebuggerActivity"
             android:label="@string/app_name">
 
             <intent-filter>
@@ -26,7 +24,7 @@
 
 
         <activity
-            android:name=".activity.DescriptionActivity"
+            android:name="com.github.akinaru.hcidebugger.activity.DescriptionActivity"
             android:label="@string/app_name"></activity>
     </application>
 

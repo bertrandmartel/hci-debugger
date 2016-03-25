@@ -1,5 +1,10 @@
 # HCI Debugger
 
+[![Build Status](https://travis-ci.org/akinaru/hci-debugger.svg?branch=master)](https://travis-ci.org/akinaru/hci-debugger)
+[![License](http://badge.kloud51.com/pypi/l/html2text.svg)](LICENSE.md)
+
+[![Download RFdroid from Google Play](http://www.android.com/images/brand/android_app_on_play_large.png)](https://play.google.com/store/apps/details?id=com.github.akinaru.hcidebugger)
+
 Android application used to decode & display HCI packets
 
 ![screenshot](img/screen.gif)

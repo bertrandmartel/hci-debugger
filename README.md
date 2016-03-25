@@ -1,9 +1,11 @@
 # HCI Debugger
 
 [![Build Status](https://travis-ci.org/akinaru/hci-debugger.svg?branch=master)](https://travis-ci.org/akinaru/hci-debugger)
+[![Build Status](https://drone.io/github.com/akinaru/hci-debugger/status.png)](https://drone.io/github.com/akinaru/hci-debugger/latest)
 [![License](http://badge.kloud51.com/pypi/l/html2text.svg)](LICENSE.md)
 
 [![Download RFdroid from Google Play](http://www.android.com/images/brand/android_app_on_play_large.png)](https://play.google.com/store/apps/details?id=com.github.akinaru.hcidebugger)
+[![Download latest debug from drone.io](https://raw.githubusercontent.com/kageiit/images-host/master/badges/drone-io-badge.png)](https://drone.io/github.com/akinaru/hci-debugger/files/app/build/outputs/apk/app-debug.apk)
 
 Android application used to decode & display HCI packets
 

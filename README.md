@@ -1,21 +1,48 @@
-# Bluetooth AD frame viewer#
+# HCI Debugger
 
-Bluetooth advertizing frame viewer for Android :
+Android application used to decode & display HCI packets
 
-* start / stop scan
-* list all advertizing frame received
-* highlight manufacturer data (often used to advertize static or dynamic data)
-* filter frame by device name
-* compatible from Android 4.3+ (works fine on Android TV)
+![screenshot](img/screen.gif)
 
-![screenshot](https://raw.github.com/akinaru/bluetooth-advert-viewer/master/screen2.png)
+In order to use this application, you have to activate Bluetooth snoop HCI log from developper options
 
-<h1>Contributors</h1>
+## Build
 
-* Aïman Salmi
-* Bertrand Martel
+### Get code source
 
-<h4>External libraries</h4>
+```
+git clone git@github.com:akinaru/hci-debugger.git
+cd hci-debugger
+git submodule update --init --recursive
+```
 
-* Bluetooth AD frame decoder https://github.com/akinaru/bluetooth-ad-frame-decoder
+### Build Android App
 
+```
+./gradlew clean build
+```
+
+## External projects
+
+* btsnoop-decoder : https://github.com/akinaru/btsnoop-decoder
+
+* bluetooth-hci-decoder : https://github.com/akinaru/bluetooth-hci-decoder
+
+## License
+
+```
+Copyright (C) 2016  Bertrand Martel
+
+This program is free software; you can redistribute it and/or
+modify it under the terms of the GNU General Public License
+as published by the Free Software Foundation; either version 3
+of the License, or (at your option) any later version.
+
+Foobar is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with Foobar.  If not, see <http://www.gnu.org/licenses/>.
+```

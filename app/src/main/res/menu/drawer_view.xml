@@ -9,7 +9,7 @@
 
         <item
             android:id="@+id/scan_btn_nv"
-            android:icon="@drawable/ic_action_signal_nv"
+            android:icon="@drawable/ic_looks"
             android:visible="false"
             android:title="start scan" />
         <item

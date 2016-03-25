@@ -1,5 +1,5 @@
 <resources>
-    <string name="app_name">HCI debugger</string>
+    <string name="app_name">HCI Debugger</string>
     <string name="drawer_open">Open navigation drawer</string>
     <string name="drawer_close">Close navigation drawer</string>
     <string name="action_settings">Settings</string>
@@ -8,4 +8,23 @@
     <string name="copyright">\u00a9 2016 Bertrand Martel</string>
     <string name="github_link">https://github.com/akinaru/hci-debugger</string>
     <string name="last_packet_count">Set max visible packet count</string>
+    <string name="bluetooth_config">/etc/bluetooth/bt_stack.conf</string>
+    <string name="hci_warning">HCI file is specified but is not present in filesystem. Check in Developper Section that btsnoop file log is activated</string>
+    <string name="warning_dialog_exit">exit</string>
+    <string name="warning_dialog_retry">retry</string>
+    <string name="menu_item_title_enable_bluetooth">enable bluetooth</string>
+    <string name="menu_item_title_disable_bluetooth">disable bluetooth</string>
+    <string name="menu_item_title_start_scan">start scan</string>
+    <string name="menu_item_title_stop_scan">stop scan</string>
+    <string name="toast_scan_stop">scan has stopped</string>
+    <string name="toast_scan_start">scan has started</string>
+    <string name="toast_bluetooth_enabled">bluetooth enabled</string>
+    <string name="toast_bluetooth_disabled">bluetooth disabled</string>
+    <string name="bt_config_file_name_filter">BtSnoopFileName</string>
+    <string name="filter_choose">Choose</string>
+    <string name="dialog_ok">Ok</string>
+    <string name="developper_mail">kiruazoldik92@gmail.com</string>
+    <string name="issue_object">HCI Debugger Issue</string>
+    <string name="issue_title">Report a problem</string>
+    <string name="issue_message">Your error report here...</string>
 </resources>

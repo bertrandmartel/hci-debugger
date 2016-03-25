@@ -27,7 +27,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="match_parent">
 
-                <fr.bmartel.bluetooth.hcidebugger.view.CustomRecyclerView
+                <com.github.akinaru.hcidebugger.view.CustomRecyclerView
                     android:id="@+id/packet_list"
                     android:layout_width="match_parent"
                     android:layout_height="match_parent"

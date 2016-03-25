@@ -4,8 +4,19 @@
     <group android:checkableBehavior="single">
         <item
             android:icon="@drawable/ic_input"
-            android:id="@+id/set_last_packet_num"
+            android:id="@+id/set_max_packet_num"
             android:title="Set max visible packet count" />
+
+        <item
+            android:id="@+id/scan_btn_nv"
+            android:icon="@drawable/ic_action_signal_nv"
+            android:visible="false"
+            android:title="start scan" />
+        <item
+            android:id="@+id/state_bt_btn_nv"
+            android:icon="@drawable/ic_bluetooth_disabled_nv"
+            android:visible="false"
+            android:title="disable bluetooth"/>
 
         <item
             android:icon="@drawable/ic_bug_report"

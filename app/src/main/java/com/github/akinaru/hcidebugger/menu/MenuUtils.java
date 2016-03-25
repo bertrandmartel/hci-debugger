@@ -27,9 +27,8 @@ import android.view.MenuItem;
 import com.github.akinaru.hcidebugger.R;
 import com.github.akinaru.hcidebugger.dialog.AboutDialog;
 import com.github.akinaru.hcidebugger.dialog.MaxPacketCountDialog;
-import com.github.akinaru.hcidebugger.inter.IHciDebugger;
-
 import com.github.akinaru.hcidebugger.dialog.OpenSourceItemsDialog;
+import com.github.akinaru.hcidebugger.inter.IHciDebugger;
 
 /**
  * Some functions used to manage Menu
@@ -60,6 +59,14 @@ public class MenuUtils {
                 intent.putExtra(Intent.EXTRA_SUBJECT, context.getResources().getString(R.string.issue_object));
                 intent.putExtra(Intent.EXTRA_TEXT, context.getResources().getString(R.string.issue_message));
                 context.startActivity(Intent.createChooser(intent, context.getResources().getString(R.string.issue_title)));
+                break;
+            }
+            case R.id.scan_btn_nv: {
+                activity.toggleScan(menuItem);
+                break;
+            }
+            case R.id.state_bt_btn_nv: {
+                activity.toggleBtState();
                 break;
             }
             case R.id.open_source_components: {

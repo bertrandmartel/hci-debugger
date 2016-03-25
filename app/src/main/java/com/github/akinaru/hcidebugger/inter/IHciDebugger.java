@@ -19,6 +19,7 @@
 package com.github.akinaru.hcidebugger.inter;
 
 import android.content.Context;
+import android.view.MenuItem;
 
 /**
  * interface for HCI Debugger main activity
@@ -45,4 +46,16 @@ public interface IHciDebugger {
      * @return
      */
     Context getContext();
+
+    /**
+     * Change bluetooth state On/Off
+     */
+    void toggleBtState();
+
+    /**
+     * start/stop ble scan
+     *
+     * @param menuItem
+     */
+    void toggleScan(MenuItem menuItem);
 }

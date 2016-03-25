@@ -204,6 +204,8 @@ public class HciDebuggerActivity extends BaseActivity implements SwipeRefreshLay
      */
     private int mMaxPacketCount = Constants.DEFAULT_LAST_PACKET_COUNT;
 
+    private boolean mAllPacketInit = false;
+
     /**
      * task run in a thread to decoded btsnoop file, HCI packets
      */
@@ -229,6 +231,7 @@ public class HciDebuggerActivity extends BaseActivity implements SwipeRefreshLay
                 return;
             }
 
+            mAllPacketInit = false;
             if (!filePath.equals("")) {
                 startHciLogStream(filePath, prefs.getInt(Constants.PREFERENCES_MAX_PACKET_COUNT, Constants.DEFAULT_LAST_PACKET_COUNT));
             } else {
@@ -383,8 +386,6 @@ public class HciDebuggerActivity extends BaseActivity implements SwipeRefreshLay
 
         //laucnh btsnoop file decoding
         pool.execute(decodingTask);
-
-
     }
 
     /**
@@ -406,7 +407,8 @@ public class HciDebuggerActivity extends BaseActivity implements SwipeRefreshLay
      *
      * @param item scan menu item
      */
-    private void toggleScan(MenuItem item) {
+    @Override
+    public void toggleScan(MenuItem item) {
         if (!mScanning) {
             Log.v(TAG, "starting scan");
             if (!mBluetoothAdapter.isEnabled()) {
@@ -419,8 +421,12 @@ public class HciDebuggerActivity extends BaseActivity implements SwipeRefreshLay
             Log.v(TAG, "stopping scan");
             mBluetoothAdapter.stopLeScan(mLeScanCallback);
             mScanning = false;
-            item.setIcon(R.drawable.ic_action_scanning);
-            item.setTitle(getResources().getString(R.string.menu_item_title_enable_bluetooth));
+            if (getResources().getConfiguration().orientation == Configuration.ORIENTATION_PORTRAIT) {
+                item.setIcon(R.drawable.ic_looks);
+            } else {
+                item.setIcon(R.drawable.ic_action_scanning);
+            }
+            item.setTitle(getResources().getString(R.string.menu_item_title_start_scan));
             Toast.makeText(HciDebuggerActivity.this, getResources().getString(R.string.toast_scan_stop), Toast.LENGTH_SHORT).show();
         }
     }
@@ -432,7 +438,14 @@ public class HciDebuggerActivity extends BaseActivity implements SwipeRefreshLay
             toolbar.getMenu().findItem(R.id.scan_btn).setVisible(false);
             toolbar.getMenu().findItem(R.id.state_bt_btn).setVisible(false);
             nvDrawer.getMenu().findItem(R.id.scan_btn_nv).setVisible(true);
-            nvDrawer.getMenu().findItem(R.id.state_bt_btn_nv).setVisible(true);
+            MenuItem stateBtn = nvDrawer.getMenu().findItem(R.id.state_bt_btn_nv);
+            stateBtn.setVisible(true);
+            if (mBluetoothAdapter.isEnabled()) {
+                stateBtn.setIcon(R.drawable.ic_bluetooth);
+            } else {
+                stateBtn.setIcon(R.drawable.ic_bluetooth_disabled);
+            }
+            stateBtn.setTitle(getResources().getString(R.string.menu_item_title_enable_bluetooth_portrait));
         }
         return ret;
     }
@@ -443,16 +456,26 @@ public class HciDebuggerActivity extends BaseActivity implements SwipeRefreshLay
     private void startScan() {
         mScanning = true;
         mBluetoothAdapter.startLeScan(mLeScanCallback);
-        MenuItem item = toolbar.getMenu().findItem(R.id.scan_btn);
-        item.setIcon(R.drawable.ic_portable_wifi_off);
-        item.setTitle(getResources().getString(R.string.menu_item_title_disable_bluetooth));
+
+        MenuItem item;
+
+        if (getResources().getConfiguration().orientation == Configuration.ORIENTATION_PORTRAIT) {
+            item = nvDrawer.getMenu().findItem(R.id.scan_btn_nv);
+        } else {
+            item = toolbar.getMenu().findItem(R.id.scan_btn);
+        }
+        if (item != null) {
+            item.setIcon(R.drawable.ic_portable_wifi_off);
+            item.setTitle(getResources().getString(R.string.menu_item_title_stop_scan));
+        }
         Toast.makeText(HciDebuggerActivity.this, getResources().getString(R.string.toast_scan_start), Toast.LENGTH_SHORT).show();
     }
 
     /**
      * switch on/off bluetooth
      */
-    private void toggleBtState() {
+    @Override
+    public void toggleBtState() {
         if (mBluetoothAdapter.isEnabled()) {
             setBluetooth(false);
         } else {
@@ -589,6 +612,7 @@ public class HciDebuggerActivity extends BaseActivity implements SwipeRefreshLay
         notifyAdapter();
         frameCount = 1;
         stopHciLogStream();
+
         pool.execute(decodingTask);
         mSwipeRefreshLayout.setRefreshing(false);
     }
@@ -643,24 +667,41 @@ public class HciDebuggerActivity extends BaseActivity implements SwipeRefreshLay
                     runOnUiThread(new Runnable() {
                         @Override
                         public void run() {
-                            MenuItem item = toolbar.getMenu().findItem(R.id.state_bt_btn);
-                            if (item != null) {
-                                item.setIcon(R.drawable.ic_bluetooth_disabled);
-                                item.setTitle(getResources().getString(R.string.menu_item_title_enable_bluetooth));
-                                Toast.makeText(HciDebuggerActivity.this, getResources().getString(R.string.toast_bluetooth_disabled), Toast.LENGTH_SHORT).show();
+                            if (getResources().getConfiguration().orientation == Configuration.ORIENTATION_PORTRAIT) {
+                                MenuItem stateBtn = nvDrawer.getMenu().findItem(R.id.state_bt_btn_nv);
+                                if (stateBtn != null) {
+                                    stateBtn.setIcon(R.drawable.ic_bluetooth_disabled);
+                                    stateBtn.setTitle(getResources().getString(R.string.menu_item_title_enable_bluetooth_portrait));
+                                }
+                            } else {
+                                MenuItem item = toolbar.getMenu().findItem(R.id.state_bt_btn);
+                                if (item != null) {
+                                    item.setIcon(R.drawable.ic_bluetooth_disabled);
+                                    item.setTitle(getResources().getString(R.string.menu_item_title_enable_bluetooth));
+                                }
                             }
+                            Toast.makeText(HciDebuggerActivity.this, getResources().getString(R.string.toast_bluetooth_disabled), Toast.LENGTH_SHORT).show();
                         }
                     });
                 } else if (state == BluetoothAdapter.STATE_ON) {
                     runOnUiThread(new Runnable() {
                         @Override
                         public void run() {
-                            MenuItem item = toolbar.getMenu().findItem(R.id.state_bt_btn);
-                            if (item != null) {
-                                item.setIcon(R.drawable.ic_bluetooth);
-                                item.setTitle(getResources().getString(R.string.menu_item_title_disable_bluetooth));
-                                Toast.makeText(HciDebuggerActivity.this, getResources().getString(R.string.toast_bluetooth_enabled), Toast.LENGTH_SHORT).show();
+
+                            if (getResources().getConfiguration().orientation == Configuration.ORIENTATION_PORTRAIT) {
+                                MenuItem stateBtn = nvDrawer.getMenu().findItem(R.id.state_bt_btn_nv);
+                                if (stateBtn != null) {
+                                    stateBtn.setIcon(R.drawable.ic_bluetooth);
+                                    stateBtn.setTitle(getResources().getString(R.string.menu_item_title_enable_bluetooth_portrait));
+                                }
+                            } else {
+                                MenuItem item = toolbar.getMenu().findItem(R.id.state_bt_btn);
+                                if (item != null) {
+                                    item.setIcon(R.drawable.ic_bluetooth);
+                                    item.setTitle(getResources().getString(R.string.menu_item_title_disable_bluetooth));
+                                }
                             }
+                            Toast.makeText(HciDebuggerActivity.this, getResources().getString(R.string.toast_bluetooth_enabled), Toast.LENGTH_SHORT).show();
                             if (startScan) {
                                 startScan();
                                 startScan = false;
@@ -1112,9 +1153,11 @@ public class HciDebuggerActivity extends BaseActivity implements SwipeRefreshLay
      */
     public void onHciFrameReceived(final String snoopFrame, final String hciFrame) {
 
-        if (frameCount > mMaxPacketCount) {
-            mPacketCount++;
+        if (!mAllPacketInit && ((frameCount >= mPacketCount) || (frameCount >= mMaxPacketCount))) {
+            mAllPacketInit = true;
         }
+        if (mAllPacketInit)
+            mPacketCount++;
 
         try {
             JSONObject snoopJson = new JSONObject(snoopFrame);

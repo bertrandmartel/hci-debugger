@@ -42,7 +42,7 @@ static BtSnoopParser *parser_ptr;
 
 extern "C" {
 
-JNIEXPORT void JNICALL Java_com_github_akinaru_hcidebugger_activity_HciDebuggerActivity_startHciLogStream(JNIEnv* env, jobject obj,jstring filePath,jint lastPacketCount)
+JNIEXPORT void JNICALL Java_com_github_akinaru_hcidebugger_service_HciDebuggerService_startHciLogStream(JNIEnv* env, jobject obj,jstring filePath,jint lastPacketCount)
 {
 	BtSnoopMonitor::jobj = env->NewGlobalRef(obj);
 
@@ -93,7 +93,7 @@ JNIEXPORT void JNICALL Java_com_github_akinaru_hcidebugger_activity_HciDebuggerA
 
 extern "C" {
 
-JNIEXPORT void JNICALL Java_com_github_akinaru_hcidebugger_activity_HciDebuggerActivity_stopHciLogStream(JNIEnv* env, jobject obj)
+JNIEXPORT void JNICALL Java_com_github_akinaru_hcidebugger_service_HciDebuggerService_stopHciLogStream(JNIEnv* env, jobject obj)
 {
 	__android_log_print(ANDROID_LOG_VERBOSE,"stopHciLogStream","stopping thread\n");
 	

@@ -23,13 +23,16 @@ import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothManager;
 import android.content.BroadcastReceiver;
+import android.content.ComponentName;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.content.ServiceConnection;
 import android.content.SharedPreferences;
 import android.content.res.Configuration;
 import android.os.Bundle;
+import android.os.IBinder;
 import android.support.design.widget.FloatingActionButton;
 import android.support.design.widget.NavigationView;
 import android.support.v4.widget.SwipeRefreshLayout;
@@ -69,6 +72,9 @@ import com.github.akinaru.hcidebugger.model.PacketHciEventLEMeta;
 import com.github.akinaru.hcidebugger.model.PacketHciLEAdvertizing;
 import com.github.akinaru.hcidebugger.model.PacketHciScoData;
 import com.github.akinaru.hcidebugger.model.ValuePair;
+import com.github.akinaru.hcidebugger.service.HciDebuggerService;
+import com.github.akinaru.hcidebugger.service.IDecodingService;
+import com.github.akinaru.hcidebugger.service.IPacketReceptionCallback;
 import com.github.akinaru.hcidebugger.view.CustomRecyclerView;
 
 import org.json.JSONArray;
@@ -93,24 +99,7 @@ import java.util.concurrent.Executors;
  *
  * @author Bertrand Martel
  */
-public class HciDebuggerActivity extends BaseActivity implements SwipeRefreshLayout.OnRefreshListener, IHciDebugger {
-
-    /**
-     * load native module entry point
-     */
-    static {
-        System.loadLibrary("hciviewer");
-    }
-
-    /**
-     * start streaming hci log file
-     */
-    public native void startHciLogStream(String filePath, int lastPacketCount);
-
-    /**
-     * stop streaming hci log file
-     */
-    public native void stopHciLogStream();
+public class HciDebuggerActivity extends BaseActivity implements SwipeRefreshLayout.OnRefreshListener, IHciDebugger, IPacketReceptionCallback {
 
     private static String TAG = HciDebuggerActivity.class.getSimpleName();
 
@@ -204,7 +193,20 @@ public class HciDebuggerActivity extends BaseActivity implements SwipeRefreshLay
      */
     private int mMaxPacketCount = Constants.DEFAULT_LAST_PACKET_COUNT;
 
+    /**
+     * define if all packet have been received once
+     */
     private boolean mAllPacketInit = false;
+
+    /**
+     * HCI decoding service
+     */
+    private IDecodingService service;
+
+    /**
+     * define if activity is bound to service
+     */
+    private boolean bound = false;
 
     /**
      * task run in a thread to decoded btsnoop file, HCI packets
@@ -233,7 +235,11 @@ public class HciDebuggerActivity extends BaseActivity implements SwipeRefreshLay
 
             mAllPacketInit = false;
             if (!filePath.equals("")) {
-                startHciLogStream(filePath, prefs.getInt(Constants.PREFERENCES_MAX_PACKET_COUNT, Constants.DEFAULT_LAST_PACKET_COUNT));
+                if (service != null) {
+                    service.startHciLogStream(filePath, prefs.getInt(Constants.PREFERENCES_MAX_PACKET_COUNT, Constants.DEFAULT_LAST_PACKET_COUNT));
+                } else {
+                    Log.e(TAG, "error service null");
+                }
             } else {
                 showWarningDialog("HCI file path not specified in " + getResources().getString(R.string.bluetooth_config));
             }
@@ -357,14 +363,6 @@ public class HciDebuggerActivity extends BaseActivity implements SwipeRefreshLay
             }
         });
 
-        //register bluetooth receiver
-        IntentFilter intentFilter = new IntentFilter();
-        intentFilter.addAction(BluetoothAdapter.ACTION_STATE_CHANGED);
-        intentFilter.addAction(BluetoothAdapter.ACTION_DISCOVERY_FINISHED);
-        intentFilter.addAction(BluetoothAdapter.ACTION_DISCOVERY_STARTED);
-
-        registerReceiver(mBroadcastReceiver, intentFilter);
-
         //setup floating button
         final FloatingActionButton upFloatingBtn = (FloatingActionButton) findViewById(R.id.updown_btn);
         upFloatingBtn.setOnClickListener(new View.OnClickListener() {
@@ -384,9 +382,48 @@ public class HciDebuggerActivity extends BaseActivity implements SwipeRefreshLay
             }
         });
 
-        //laucnh btsnoop file decoding
-        pool.execute(decodingTask);
+
+        Intent intent = new Intent(this, HciDebuggerService.class);
+
+        // bind the service to current activity and create it if it didnt exist before
+        startService(intent);
+        bound = bindService(intent, mServiceConnection, BIND_AUTO_CREATE);
     }
+
+
+    public void onResume() {
+        super.onResume();
+        //register bluetooth receiver
+        IntentFilter intentFilter = new IntentFilter();
+        intentFilter.addAction(BluetoothAdapter.ACTION_STATE_CHANGED);
+        intentFilter.addAction(BluetoothAdapter.ACTION_DISCOVERY_FINISHED);
+        intentFilter.addAction(BluetoothAdapter.ACTION_DISCOVERY_STARTED);
+
+        registerReceiver(mBroadcastReceiver, intentFilter);
+    }
+
+    /**
+     * Manage Bluetooth Service lifecycle
+     */
+    private ServiceConnection mServiceConnection = new ServiceConnection() {
+
+        @Override
+        public void onServiceConnected(ComponentName name, IBinder service) {
+            Log.v(TAG, "Connected to service");
+
+            HciDebuggerActivity.this.service = ((HciDebuggerService.LocalBinder) service).getService();
+
+            HciDebuggerActivity.this.service.setPacketReceptionCb(HciDebuggerActivity.this);
+
+            //launch btsnoop file decoding
+            pool.execute(decodingTask);
+        }
+
+        @Override
+        public void onServiceDisconnected(ComponentName name) {
+
+        }
+    };
 
     /**
      * clear adapter
@@ -611,7 +648,11 @@ public class HciDebuggerActivity extends BaseActivity implements SwipeRefreshLay
         packetFilteredList.clear();
         notifyAdapter();
         frameCount = 1;
-        stopHciLogStream();
+        if (service != null) {
+            service.stopHciLogStream();
+        } else {
+            Log.e(TAG, "error service null");
+        }
 
         pool.execute(decodingTask);
         mSwipeRefreshLayout.setRefreshing(false);
@@ -1082,11 +1123,27 @@ public class HciDebuggerActivity extends BaseActivity implements SwipeRefreshLay
     };
 
     @Override
+    public void onPause() {
+        super.onPause();
+        unregisterReceiver(mBroadcastReceiver);
+    }
+
+    @Override
     protected void onDestroy() {
         super.onDestroy();
-        frameCount = 1;
-        unregisterReceiver(mBroadcastReceiver);
-        stopHciLogStream();
+        Log.v(TAG, "exiting HCI Debugger app");
+        if (service != null) {
+            service.stopHciLogStream();
+        }
+        try {
+            if (bound) {
+                // unregister receiver or you will have strong exception
+                unbindService(mServiceConnection);
+                bound = false;
+            }
+        } catch (IllegalArgumentException e) {
+            e.printStackTrace();
+        }
     }
 
     /**
@@ -1131,6 +1188,7 @@ public class HciDebuggerActivity extends BaseActivity implements SwipeRefreshLay
      *
      * @param packetCount total number of HCI packet available
      */
+    @Override
     public void onFinishedPacketCount(int packetCount) {
         Log.v(TAG, "onFinishedPacketCount " + packetCount);
         mPacketCount = packetCount;
@@ -1151,6 +1209,7 @@ public class HciDebuggerActivity extends BaseActivity implements SwipeRefreshLay
      * @param snoopFrame snoop frame part
      * @param hciFrame   HCI packet part
      */
+    @Override
     public void onHciFrameReceived(final String snoopFrame, final String hciFrame) {
 
         if (!mAllPacketInit && ((frameCount >= mPacketCount) || (frameCount >= mMaxPacketCount))) {

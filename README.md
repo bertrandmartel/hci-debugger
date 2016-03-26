@@ -29,6 +29,11 @@ git submodule update --init --recursive
 ./gradlew clean build
 ```
 
+## Tested devices
+
+* Samsung Galaxy S4
+* Samsung Galaxy S6
+
 ## External projects
 
 * btsnoop-decoder : https://github.com/akinaru/btsnoop-decoder

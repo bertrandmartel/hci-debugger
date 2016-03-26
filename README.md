@@ -1,6 +1,5 @@
 # HCI Debugger
 
-[![Build Status](https://travis-ci.org/akinaru/hci-debugger.svg?branch=master)](https://travis-ci.org/akinaru/hci-debugger)
 [![Build Status](https://drone.io/github.com/akinaru/hci-debugger/status.png)](https://drone.io/github.com/akinaru/hci-debugger/latest)
 [![License](http://badge.kloud51.com/pypi/l/html2text.svg)](LICENSE.md)
 
@@ -15,7 +14,7 @@ In order to use this application, you have to activate Bluetooth snoop HCI log f
 
 ## Build
 
-### Get code source
+### Get source code
 
 ```
 git clone git@github.com:akinaru/hci-debugger.git

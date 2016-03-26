@@ -42,8 +42,8 @@
     public static com.google.gdata.model.ElementKey KEY;
     public static void registerMetadata(com.google.gdata.model.MetadataRegistry);
 }
--keep class com.github.akinaru.hcidebugger.activity.HciDebuggerActivity { *; }
+-keep class com.github.akinaru.hcidebugger.service.HciDebuggerService { *; }
 
--keepclassmembers,allowobfuscation class com.github.akinaru.hcidebugger.activity.HciDebuggerActivity.** {
+-keepclassmembers,allowobfuscation class com.github.akinaru.hcidebugger.service.HciDebuggerService.** {
     <methods>;
 }

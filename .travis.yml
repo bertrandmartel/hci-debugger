@@ -16,6 +16,9 @@ cache: false
 
 before_install:
   - git submodule update --init --recursive
+  - git clone https://github.com/urho3d/android-ndk.git $HOME/android-ndk-root
+  - export ANDROID_NDK_HOME=$HOME/android-ndk-root
+
 install:
   # Ensure Gradle wrapper is executable, download wrapper and show version
   - chmod +x ./gradlew; ls -l gradlew; ./gradlew wrapper -v

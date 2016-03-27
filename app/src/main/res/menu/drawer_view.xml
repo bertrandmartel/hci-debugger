@@ -19,7 +19,8 @@
         <item
             android:id="@+id/reset_snoop_file_nv"
             android:icon="@drawable/ic_flash_on_black"
-            android:title="@string/menu_title_reset_snoop_file" />
+            android:title="@string/menu_title_reset_snoop_file"
+            android:visible="false" />
         <item
             android:id="@+id/report_bugs"
             android:icon="@drawable/ic_bug_report"

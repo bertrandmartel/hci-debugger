@@ -103,6 +103,12 @@ public class HciDebuggerService extends Service implements IDecodingService {
         }
     }
 
+    public void onError(int errorCode, String errorMessage) {
+        if (callback != null) {
+            callback.onError(errorCode, errorMessage);
+        }
+    }
+
     /**
      * callback called from native function when packet count is finished
      *

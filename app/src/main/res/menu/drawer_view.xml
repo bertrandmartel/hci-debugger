@@ -3,34 +3,34 @@
 
     <group android:checkableBehavior="single">
         <item
-            android:icon="@drawable/ic_input"
             android:id="@+id/set_max_packet_num"
-            android:title="Set max visible packet count" />
-
+            android:icon="@drawable/ic_input"
+            android:title="@string/menu_title_set_max_visible_packet_count" />
         <item
             android:id="@+id/scan_btn_nv"
             android:icon="@drawable/ic_looks"
-            android:visible="false"
-            android:title="start scan" />
+            android:title="@string/menu_title_scan"
+            android:visible="false" />
         <item
             android:id="@+id/state_bt_btn_nv"
             android:icon="@drawable/ic_bluetooth_disabled_nv"
-            android:visible="false"
-            android:title="disable bluetooth"/>
-
+            android:title="@string/menu_title_bluetooth"
+            android:visible="false" />
         <item
-            android:icon="@drawable/ic_bug_report"
+            android:id="@+id/reset_snoop_file_nv"
+            android:icon="@drawable/ic_flash_on_black"
+            android:title="@string/menu_title_reset_snoop_file" />
+        <item
             android:id="@+id/report_bugs"
-            android:title="Report Bugs" />
-
+            android:icon="@drawable/ic_bug_report"
+            android:title="@string/menu_title_report_bugs" />
         <item
-            android:icon="@drawable/ic_view_comfy"
             android:id="@+id/open_source_components"
-            android:title="Open Source components" />
-
+            android:icon="@drawable/ic_view_comfy"
+            android:title="@string/menu_title_open_source_components" />
         <item
-            android:icon="@drawable/ic_info_outline"
             android:id="@+id/about_app"
-            android:title="About" />
+            android:icon="@drawable/ic_info_outline"
+            android:title="@string/menu_title_about" />
     </group>
 </menu>

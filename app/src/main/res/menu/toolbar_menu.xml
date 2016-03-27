@@ -9,26 +9,31 @@
     <item
         android:id="@+id/clear_btn"
         android:icon="@drawable/ic_action_trash"
-        android:title="clear"
+        android:title="@string/menu_title_clear"
         app:showAsAction="always" />
     <item
         android:id="@+id/scan_btn"
         android:icon="@drawable/ic_action_scanning"
-        android:title="scan"
+        android:title="@string/menu_title_scan"
         app:showAsAction="always" />
     <item
         android:id="@+id/state_bt_btn"
         android:icon="@drawable/ic_bluetooth_disabled"
-        android:title="disable bluetooth"
+        android:title="@string/menu_title_bluetooth"
+        app:showAsAction="always" />
+    <item
+        android:id="@+id/reset_snoop_file"
+        android:icon="@drawable/ic_flash_on"
+        android:title="@string/menu_title_reset_snoop_file"
         app:showAsAction="always" />
     <item
         android:id="@+id/filter_btn"
         android:icon="@drawable/ic_action_filter"
-        android:title="filter"
+        android:title="@string/menu_title_filter"
         app:showAsAction="always" />
     <item
         android:id="@+id/refresh"
         android:icon="@drawable/ic_settings_backup_restore"
-        android:title="refresh"
+        android:title="@string/menu_title_refresh"
         app:showAsAction="always" />
 </menu>

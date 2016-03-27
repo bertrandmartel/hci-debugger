@@ -87,6 +87,8 @@ import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
@@ -208,6 +210,10 @@ public class HciDebuggerActivity extends BaseActivity implements SwipeRefreshLay
      */
     private boolean bound = false;
 
+    private TextView mNothingToShowTv;
+
+    private boolean mFirstPacketReceived = true;
+
     /**
      * task run in a thread to decoded btsnoop file, HCI packets
      */
@@ -218,18 +224,26 @@ public class HciDebuggerActivity extends BaseActivity implements SwipeRefreshLay
             runOnUiThread(new Runnable() {
                 @Override
                 public void run() {
+                    mFirstPacketReceived = true;
                     //when decoding task is launched hide recyclerview to wait for packet count callback
                     mDisplayFrame.setVisibility(View.GONE);
+                    mNothingToShowTv.setText(getResources().getString(R.string.processing_hci_frames));
                     mWaitingFrame.setVisibility(View.VISIBLE);
                 }
             });
+
+            configSnoopFile(true);
 
             //get btsnoop file
             String filePath = getHciLogFilePath();
 
             File file = new File(filePath);
             if (!file.exists()) {
-                showWarningDialog(getResources().getString(R.string.hci_warning));
+                resetSnoopFile();
+                filePath = getHciLogFilePath();
+                file = new File(filePath);
+                if (!file.exists())
+                    showWarningDialog(getResources().getString(R.string.hci_warning));
                 return;
             }
 
@@ -296,6 +310,7 @@ public class HciDebuggerActivity extends BaseActivity implements SwipeRefreshLay
         //setup frames
         mDisplayFrame = (FrameLayout) findViewById(R.id.display_frame);
         mWaitingFrame = (FrameLayout) findViewById(R.id.waiting_frame);
+        mNothingToShowTv = (TextView) findViewById(R.id.nothing_to_show);
 
         // Setup drawer view
         setupDrawerContent(nvDrawer);
@@ -474,6 +489,7 @@ public class HciDebuggerActivity extends BaseActivity implements SwipeRefreshLay
         if (getResources().getConfiguration().orientation == Configuration.ORIENTATION_PORTRAIT) {
             toolbar.getMenu().findItem(R.id.scan_btn).setVisible(false);
             toolbar.getMenu().findItem(R.id.state_bt_btn).setVisible(false);
+            toolbar.getMenu().findItem(R.id.reset_snoop_file).setVisible(false);
             nvDrawer.getMenu().findItem(R.id.scan_btn_nv).setVisible(true);
             MenuItem stateBtn = nvDrawer.getMenu().findItem(R.id.state_bt_btn_nv);
             stateBtn.setVisible(true);
@@ -517,6 +533,36 @@ public class HciDebuggerActivity extends BaseActivity implements SwipeRefreshLay
             setBluetooth(false);
         } else {
             setBluetooth(true);
+        }
+    }
+
+    public void resetSnoopFile() {
+        configSnoopFile(false);
+        configSnoopFile(true);
+        refresh();
+    }
+
+    /**
+     * Activate/Desactivate snoop file log
+     *
+     * @param state true if snoop file log is activated, false elsewhere
+     */
+    public void configSnoopFile(boolean state) {
+        BluetoothAdapter adapter = BluetoothAdapter.getDefaultAdapter();
+        Method[] adapterMethods = adapter.getClass().getDeclaredMethods();
+        for (Method method : adapterMethods) {
+            if (method.getName().equals("configHciSnoopLog")) {
+                Log.v(TAG, "activating snoop file log");
+                try {
+                    method.invoke(adapter, state);
+                } catch (IllegalArgumentException e) {
+                    e.printStackTrace();
+                } catch (IllegalAccessException e) {
+                    e.printStackTrace();
+                } catch (InvocationTargetException e) {
+                    e.printStackTrace();
+                }
+            }
         }
     }
 
@@ -801,6 +847,19 @@ public class HciDebuggerActivity extends BaseActivity implements SwipeRefreshLay
             } else {
                 item.setIcon(R.drawable.ic_bluetooth_disabled);
             }
+        }
+
+        //reset snoop file button
+        item = menu.findItem(R.id.reset_snoop_file);
+        if (item != null) {
+            item.setOnMenuItemClickListener(new MenuItem.OnMenuItemClickListener() {
+
+                @Override
+                public boolean onMenuItemClick(MenuItem item) {
+                    resetSnoopFile();
+                    return true;
+                }
+            });
         }
 
         //filter button
@@ -1196,11 +1255,9 @@ public class HciDebuggerActivity extends BaseActivity implements SwipeRefreshLay
             @Override
             public void run() {
                 //display recyclerview + swipe refresh view
-                mWaitingFrame.setVisibility(View.GONE);
-                mDisplayFrame.setVisibility(View.VISIBLE);
+                mNothingToShowTv.setText(getResources().getString(R.string.file_snoop_empty));
             }
         });
-
     }
 
     /**
@@ -1212,6 +1269,17 @@ public class HciDebuggerActivity extends BaseActivity implements SwipeRefreshLay
     @Override
     public void onHciFrameReceived(final String snoopFrame, final String hciFrame) {
 
+        if (mFirstPacketReceived) {
+            mFirstPacketReceived = false;
+            runOnUiThread(new Runnable() {
+                @Override
+                public void run() {
+                    //display recyclerview + swipe refresh view
+                    mWaitingFrame.setVisibility(View.GONE);
+                    mDisplayFrame.setVisibility(View.VISIBLE);
+                }
+            });
+        }
         if (!mAllPacketInit && ((frameCount >= mPacketCount) || (frameCount >= mMaxPacketCount))) {
             mAllPacketInit = true;
         }

@@ -58,4 +58,9 @@ public interface IHciDebugger {
      * @param menuItem
      */
     void toggleScan(MenuItem menuItem);
+
+    /**
+     * reset Snoop file
+     */
+    void resetSnoopFile();
 }

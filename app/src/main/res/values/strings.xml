@@ -11,6 +11,8 @@
     <string name="last_packet_count">Set max visible packet count</string>
     <string name="bluetooth_config">/etc/bluetooth/bt_stack.conf</string>
     <string name="hci_warning">HCI file is specified but is not present in filesystem. Check in Developper Section that btsnoop file log is activated</string>
+    <string name="error_opening">An error occured while opening snoop log file</string>
+    <string name="error_reading">An error occured while reading snoop log file</string>
     <string name="warning_dialog_exit">exit</string>
     <string name="warning_dialog_retry">retry</string>
     <string name="menu_item_title_enable_bluetooth">enable bluetooth</string>

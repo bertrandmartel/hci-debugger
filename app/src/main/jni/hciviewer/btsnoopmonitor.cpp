@@ -41,14 +41,8 @@
 
 using namespace std;
 
-jobject   BtSnoopMonitor::jobj;
-jmethodID BtSnoopMonitor::mid;
-jmethodID BtSnoopMonitor::mid_counting;
-
 BtSnoopMonitor::BtSnoopMonitor()
 {
-	count=0;
-	count2=0;
 }
 
 BtSnoopMonitor::~BtSnoopMonitor(){
@@ -63,9 +57,9 @@ BtSnoopMonitor::~BtSnoopMonitor(){
 void BtSnoopMonitor::onFinishedCountingPackets(int packet_count,JNIEnv * jni_env){
 
 	if (jni_env!=0){
-		if (BtSnoopMonitor::jobj!=0 && BtSnoopMonitor::mid_counting!=0){
+		if (jobj!=0 && mid_counting!=0){
 
-			jni_env->CallVoidMethod(BtSnoopMonitor::jobj, BtSnoopMonitor::mid_counting,packet_count);
+			jni_env->CallVoidMethod(jobj, mid_counting,packet_count);
 
 			if (jni_env->ExceptionCheck()) {
 				jni_env->ExceptionDescribe();
@@ -92,43 +86,18 @@ void BtSnoopMonitor::onFinishedCountingPackets(int packet_count,JNIEnv * jni_env
  */
 void BtSnoopMonitor::onSnoopPacketReceived(BtSnoopFileInfo fileInfo,BtSnoopPacket packet,JNIEnv * jni_env){
 
-	/*
-	count++;
-	__android_log_print(ANDROID_LOG_INFO,"hci-debugger","new frame %d\n",count);
-	
-	//packet.printInfo();
-	*/
-
 	IHciFrame * frame = hci_decoder.decode(packet.getPacketData());
 
 	if (frame!=0){
-		/*
-		if (frame->getPacketType() == HCI_TYPE_EVENT){
-
-			IHciEventFrame* eventFrame = dynamic_cast<IHciEventFrame*>(frame);
-
-			if (eventFrame->getEventCode() == HCI_EVENT_LE_META){
-
-				count2++;
-				__android_log_print(ANDROID_LOG_INFO,"hcidecoder","new frame %d : decoded %d\n",count,count2);
-				
-				std::ostringstream oss;
-				uint64_t i = packet.getUnixTimestampMicroseconds();
-				oss << i;
-				std:string intAsString(oss.str());
-				__android_log_print(ANDROID_LOG_VERBOSE,"hcidecoder","frame : %s %s\n",intAsString.data(),frame->toJson(false).data());
-			}
-		}
-		*/
 
 		if (jni_env!=0){
-			if (BtSnoopMonitor::jobj!=0 && BtSnoopMonitor::mid!=0){
+			if (jobj!=0 && mid!=0){
 
 				jstring hci_frame = jni_env->NewStringUTF(frame->toJson(false).data());
 
 				jstring snoop_frame = jni_env->NewStringUTF(packet.toJson(false).data());
 
-				jni_env->CallVoidMethod(BtSnoopMonitor::jobj, BtSnoopMonitor::mid, snoop_frame,hci_frame);
+				jni_env->CallVoidMethod(jobj, mid, snoop_frame,hci_frame);
 
 				jni_env->DeleteLocalRef(hci_frame);
 				jni_env->DeleteLocalRef(snoop_frame);
@@ -146,5 +115,39 @@ void BtSnoopMonitor::onSnoopPacketReceived(BtSnoopFileInfo fileInfo,BtSnoopPacke
 		}
 	}else{
 		__android_log_print(ANDROID_LOG_INFO,"hci-debugger","frame not treated");
+	}
+}
+
+/**
+ * @brief
+ * 		called when and error occured
+ * @param error_code
+ *      error code
+ * @param error_message
+ *      error message
+ * @param jni_env
+ *      JNI env object
+ */
+void BtSnoopMonitor::onError(int error_code,std::string error_message, JNIEnv * jni_env){
+
+	if (jni_env!=0){
+		if (jobj!=0 && mid_counting!=0){
+
+			jstring error_jmessage = jni_env->NewStringUTF(error_message.data());
+
+			jni_env->CallVoidMethod(jobj, mid_error,error_code,error_jmessage);
+
+			jni_env->DeleteLocalRef(error_jmessage);
+
+			if (jni_env->ExceptionCheck()) {
+				jni_env->ExceptionDescribe();
+			}
+		}
+		else{
+			__android_log_print(ANDROID_LOG_ERROR,"hci-debugger","class or method if not defined\n");
+		}
+	}
+	else{
+		__android_log_print(ANDROID_LOG_ERROR,"hci-debugger","jni_env is not defined\n");
 	}
 }

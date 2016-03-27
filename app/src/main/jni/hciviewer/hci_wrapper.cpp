@@ -38,35 +38,36 @@
 
 using namespace std;
 
-static BtSnoopParser *parser_ptr;
+static BtSnoopParser parser;
+static BtSnoopMonitor monitor;
 
 extern "C" {
 
 JNIEXPORT void JNICALL Java_com_github_akinaru_hcidebugger_service_HciDebuggerService_startHciLogStream(JNIEnv* env, jobject obj,jstring filePath,jint lastPacketCount)
 {
-	BtSnoopMonitor::jobj = env->NewGlobalRef(obj);
+	monitor.jobj = env->NewGlobalRef(obj);
 
 	// save refs for callback
-	jclass g_clazz = env->GetObjectClass(BtSnoopMonitor::jobj);
+	jclass g_clazz = env->GetObjectClass(monitor.jobj);
 	if (g_clazz == NULL) {
 		__android_log_print(ANDROID_LOG_ERROR,"startHciLogStream","Failed to find class\n");
 	}
 
-	BtSnoopMonitor::mid = env->GetMethodID(g_clazz, "onHciFrameReceived", "(Ljava/lang/String;Ljava/lang/String;)V");
-	if (BtSnoopMonitor::mid == NULL) {
+	monitor.mid = env->GetMethodID(g_clazz, "onHciFrameReceived", "(Ljava/lang/String;Ljava/lang/String;)V");
+	if (monitor.mid == NULL) {
 		__android_log_print(ANDROID_LOG_ERROR,"startHciLogStream","Unable to get method ref\n");
 	}
 
-	BtSnoopMonitor::mid_counting= env->GetMethodID(g_clazz, "onFinishedPacketCount", "(I)V");
-	if (BtSnoopMonitor::mid == NULL) {
+	monitor.mid_counting= env->GetMethodID(g_clazz, "onFinishedPacketCount", "(I)V");
+	if (monitor.mid_counting == NULL) {
 		__android_log_print(ANDROID_LOG_ERROR,"startHciLogStream","Unable to get method ref\n");
 	}
 
-	BtSnoopParser parser;
-	parser_ptr=&parser;
-
-	BtSnoopMonitor monitor;
-
+	monitor.mid_error= env->GetMethodID(g_clazz, "onError", "(ILjava/lang/String;)V");
+	if (monitor.mid_error == NULL) {
+		__android_log_print(ANDROID_LOG_ERROR,"startHciLogStream","Unable to get method ref\n");
+	}
+	
 	parser.addSnoopListener(&monitor);
 
 	const char* filePathConvert = env->GetStringUTFChars(filePath, 0);
@@ -96,11 +97,8 @@ extern "C" {
 JNIEXPORT void JNICALL Java_com_github_akinaru_hcidebugger_service_HciDebuggerService_stopHciLogStream(JNIEnv* env, jobject obj)
 {
 	__android_log_print(ANDROID_LOG_VERBOSE,"stopHciLogStream","stopping thread\n");
-	
-	if (parser_ptr!=0){
-		parser_ptr->stop();
-		parser_ptr->clearListeners();
-	}
+	parser.stop();
+	parser.clearListeners();
 }
 }
 

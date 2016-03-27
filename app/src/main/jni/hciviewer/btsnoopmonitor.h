@@ -66,15 +66,26 @@ public:
 	 *		total packet number
 	 */
 	void onFinishedCountingPackets(int packet_count,JNIEnv * jni_env);
-	
-	static jobject jobj;
-	static jmethodID mid;
-	static jmethodID mid_counting;
+
+	/**
+	 * @brief
+	 * 		called when and error occured
+	 * @param error_code
+	 *      error code
+	 * @param error_message
+	 *      error message
+	 * @param jni_env
+	 *      JNI env object
+	 */
+	void onError(int error_code,std::string error_message, JNIEnv * jni_env);
+
+	jobject jobj;
+	jmethodID mid;
+	jmethodID mid_counting;
+	jmethodID mid_error;
 
 private:
 
-	int count;
-	int count2;
 	HciDecoder hci_decoder;
 };
 

@@ -31,6 +31,7 @@ import android.content.IntentFilter;
 import android.content.ServiceConnection;
 import android.content.SharedPreferences;
 import android.content.res.Configuration;
+import android.os.Build;
 import android.os.Bundle;
 import android.os.IBinder;
 import android.support.design.widget.FloatingActionButton;
@@ -491,6 +492,7 @@ public class HciDebuggerActivity extends BaseActivity implements SwipeRefreshLay
             toolbar.getMenu().findItem(R.id.state_bt_btn).setVisible(false);
             toolbar.getMenu().findItem(R.id.reset_snoop_file).setVisible(false);
             nvDrawer.getMenu().findItem(R.id.scan_btn_nv).setVisible(true);
+            nvDrawer.getMenu().findItem(R.id.reset_snoop_file_nv).setVisible(true);
             MenuItem stateBtn = nvDrawer.getMenu().findItem(R.id.state_bt_btn_nv);
             stateBtn.setVisible(true);
             if (mBluetoothAdapter.isEnabled()) {
@@ -774,7 +776,9 @@ public class HciDebuggerActivity extends BaseActivity implements SwipeRefreshLay
                     runOnUiThread(new Runnable() {
                         @Override
                         public void run() {
-
+                            if (Build.VERSION.SDK_INT <= 21) {
+                                refresh();
+                            }
                             if (getResources().getConfiguration().orientation == Configuration.ORIENTATION_PORTRAIT) {
                                 MenuItem stateBtn = nvDrawer.getMenu().findItem(R.id.state_bt_btn_nv);
                                 if (stateBtn != null) {
@@ -1260,6 +1264,19 @@ public class HciDebuggerActivity extends BaseActivity implements SwipeRefreshLay
         });
     }
 
+    @Override
+    public void onError(final int errorCode, String errorMessage) {
+        runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+                if (errorCode == 0)
+                    showWarningDialog(getResources().getString(R.string.error_opening));
+                else
+                    showWarningDialog(getResources().getString(R.string.error_reading));
+            }
+        });
+    }
+
     /**
      * callback called from native function when a HCI pakcet has been decoded
      *
@@ -1447,11 +1464,16 @@ public class HciDebuggerActivity extends BaseActivity implements SwipeRefreshLay
      * Edit frame count text view and refresh adapter
      */
     private void notifyAdapter() {
-        MenuItem item = toolbar.getMenu().findItem(R.id.packet_number_entry);
-        if (item != null) {
-            item.setTitle(packetAdapter.getItemCount() + "/" + mPacketCount);
-        }
-        packetAdapter.notifyDataSetChanged();
+        runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+                MenuItem item = toolbar.getMenu().findItem(R.id.packet_number_entry);
+                if (item != null) {
+                    item.setTitle(packetAdapter.getItemCount() + "/" + mPacketCount);
+                }
+                packetAdapter.notifyDataSetChanged();
+            }
+        });
     }
 
     @Override

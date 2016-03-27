@@ -39,4 +39,12 @@ public interface IPacketReceptionCallback {
      * @param packetCount total number of HCI packet available
      */
     void onFinishedPacketCount(int packetCount);
+
+    /**
+     * callback called from native function when an opening/reading error is detected
+     *
+     * @param errorCode    error code
+     * @param errorMessage error message
+     */
+    void onError(int errorCode, String errorMessage);
 }

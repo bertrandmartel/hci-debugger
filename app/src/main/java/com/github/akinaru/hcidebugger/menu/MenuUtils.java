@@ -65,6 +65,10 @@ public class MenuUtils {
                 activity.toggleScan(menuItem);
                 break;
             }
+            case R.id.reset_snoop_file_nv: {
+                activity.resetSnoopFile();
+                break;
+            }
             case R.id.state_bt_btn_nv: {
                 activity.toggleBtState();
                 break;

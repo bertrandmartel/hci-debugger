@@ -37,7 +37,7 @@
                     android:paddingLeft="10dp"
                     android:paddingTop="5dp"
 
-                    android:text="packet number"
+                    android:text="@string/description_activity_title_packet_number"
                     android:textColor="@color/tableTextColor"
                     android:textSize="16sp" />
 
@@ -68,7 +68,7 @@
                     android:paddingLeft="10dp"
                     android:paddingTop="5dp"
 
-                    android:text="destination"
+                    android:text="@string/description_activity_title_destination"
                     android:textColor="@color/tableTextColor"
                     android:textSize="16sp" />
 
@@ -99,7 +99,7 @@
                     android:paddingBottom="5dp"
                     android:paddingLeft="10dp"
                     android:paddingTop="5dp"
-                    android:text="timestamp"
+                    android:text="@string/description_activity_title_timestamp"
                     android:textColor="@color/tableTextColor"
                     android:textSize="16sp" />
 
@@ -131,7 +131,7 @@
                     android:paddingBottom="5dp"
                     android:paddingLeft="10dp"
                     android:paddingTop="5dp"
-                    android:text="packet type"
+                    android:text="@string/description_activity_title_packet_type"
                     android:textColor="@color/tableTextColor"
                     android:textSize="16sp" />
 

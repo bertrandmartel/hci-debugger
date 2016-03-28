@@ -43,4 +43,12 @@
     <string name="menu_title_set_max_visible_packet_count">Set max visible packet count</string>
     <string name="menu_title_refresh">refresh</string>
     <string name="menu_title_filter">filter</string>
+    <string name="description_activity_title_packet_type">packet type</string>
+    <string name="description_activity_title_timestamp">timestamp</string>
+    <string name="description_activity_title_destination">destination</string>
+    <string name="description_activity_title_packet_number">packet number</string>
+    <string name="filter_dialog_withdraw_filter">withdraw filter</string>
+    <string name="filter_dialog_apply">apply</string>
+    <string name="filter_dialog_cancel">cancel</string>
+    <string name="filter_dialog_device_address">device address</string>
 </resources>

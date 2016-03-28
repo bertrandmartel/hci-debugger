@@ -35,10 +35,10 @@
         android:id="@+id/device_address_label"
         android:layout_width="fill_parent"
         android:layout_height="wrap_content"
+        android:paddingBottom="10dp"
         android:paddingLeft="10dp"
         android:paddingRight="10dp"
-        android:paddingBottom="10dp"
-        android:text="device address"
+        android:text="@string/filter_dialog_device_address"
         android:textSize="16sp"
         android:visibility="gone" />
 
@@ -62,21 +62,21 @@
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"
-            android:text="cancel" />
+            android:text="@string/filter_dialog_cancel" />
 
         <Button
             android:id="@+id/button_apply_filter"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"
-            android:text="apply" />
+            android:text="@string/filter_dialog_apply" />
     </LinearLayout>
 
     <Button
         android:id="@+id/button_withdraw_filter"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="withdraw filter" />
+        android:text="@string/filter_dialog_withdraw_filter" />
 
 
 </LinearLayout>

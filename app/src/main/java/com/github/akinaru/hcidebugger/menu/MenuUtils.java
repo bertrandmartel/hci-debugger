@@ -67,6 +67,7 @@ public class MenuUtils {
             }
             case R.id.reset_snoop_file_nv: {
                 activity.resetSnoopFile();
+                activity.refresh();
                 break;
             }
             case R.id.state_bt_btn_nv: {

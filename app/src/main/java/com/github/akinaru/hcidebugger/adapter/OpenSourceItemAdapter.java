@@ -38,7 +38,9 @@ public class OpenSourceItemAdapter extends BaseAdapter {
 
             {"btsnoop-decoder", "https://github.com/akinaru/btsnoop-decoder"},
             {"bluetooth-hci-decoder",
-                    "https://github.com/akinaru/bluetooth-hci-decoder"}
+                    "https://github.com/akinaru/bluetooth-hci-decoder"},
+            {"highlight.js",
+                    "https://highlightjs.org/"}
     };
 
     private LayoutInflater mInflater;

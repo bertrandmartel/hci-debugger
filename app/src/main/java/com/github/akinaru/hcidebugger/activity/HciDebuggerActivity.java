@@ -20,7 +20,6 @@ package com.github.akinaru.hcidebugger.activity;
 
 import android.app.AlertDialog;
 import android.bluetooth.BluetoothAdapter;
-import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothManager;
 import android.content.BroadcastReceiver;
 import android.content.ComponentName;
@@ -222,6 +221,7 @@ public class HciDebuggerActivity extends BaseActivity implements SwipeRefreshLay
         @Override
         public void run() {
 
+            Log.i(TAG, "decoding task");
             runOnUiThread(new Runnable() {
                 @Override
                 public void run() {
@@ -472,7 +472,7 @@ public class HciDebuggerActivity extends BaseActivity implements SwipeRefreshLay
             }
         } else {
             Log.v(TAG, "stopping scan");
-            mBluetoothAdapter.stopLeScan(mLeScanCallback);
+            mBluetoothAdapter.cancelDiscovery();
             mScanning = false;
             if (getResources().getConfiguration().orientation == Configuration.ORIENTATION_PORTRAIT) {
                 item.setIcon(R.drawable.ic_looks);
@@ -492,7 +492,9 @@ public class HciDebuggerActivity extends BaseActivity implements SwipeRefreshLay
             toolbar.getMenu().findItem(R.id.state_bt_btn).setVisible(false);
             toolbar.getMenu().findItem(R.id.reset_snoop_file).setVisible(false);
             nvDrawer.getMenu().findItem(R.id.scan_btn_nv).setVisible(true);
-            nvDrawer.getMenu().findItem(R.id.reset_snoop_file_nv).setVisible(true);
+            if (Build.VERSION.SDK_INT <= 22) {
+                nvDrawer.getMenu().findItem(R.id.reset_snoop_file_nv).setVisible(true);
+            }
             MenuItem stateBtn = nvDrawer.getMenu().findItem(R.id.state_bt_btn_nv);
             stateBtn.setVisible(true);
             if (mBluetoothAdapter.isEnabled()) {
@@ -510,10 +512,9 @@ public class HciDebuggerActivity extends BaseActivity implements SwipeRefreshLay
      */
     private void startScan() {
         mScanning = true;
-        mBluetoothAdapter.startLeScan(mLeScanCallback);
+        mBluetoothAdapter.startDiscovery();
 
         MenuItem item;
-
         if (getResources().getConfiguration().orientation == Configuration.ORIENTATION_PORTRAIT) {
             item = nvDrawer.getMenu().findItem(R.id.scan_btn_nv);
         } else {
@@ -541,7 +542,7 @@ public class HciDebuggerActivity extends BaseActivity implements SwipeRefreshLay
     public void resetSnoopFile() {
         configSnoopFile(false);
         configSnoopFile(true);
-        refresh();
+        //refresh();
     }
 
     /**
@@ -556,7 +557,8 @@ public class HciDebuggerActivity extends BaseActivity implements SwipeRefreshLay
             if (method.getName().equals("configHciSnoopLog")) {
                 Log.v(TAG, "activating snoop file log");
                 try {
-                    method.invoke(adapter, state);
+                    boolean ret = (boolean) method.invoke(adapter, state);
+                    Log.v(TAG, "configSnoop return with state " + ret);
                 } catch (IllegalArgumentException e) {
                     e.printStackTrace();
                 } catch (IllegalAccessException e) {
@@ -729,8 +731,13 @@ public class HciDebuggerActivity extends BaseActivity implements SwipeRefreshLay
                         if (item != null) {
                             item.setIcon(R.drawable.ic_action_scanning);
                             item.setTitle(getResources().getString(R.string.menu_item_title_start_scan));
-                            Toast.makeText(HciDebuggerActivity.this, getResources().getString(R.string.toast_scan_stop), Toast.LENGTH_SHORT).show();
                         }
+                        item = nvDrawer.getMenu().findItem(R.id.scan_btn_nv);
+                        if (item != null) {
+                            item.setIcon(R.drawable.ic_looks);
+                            item.setTitle(getResources().getString(R.string.menu_item_title_start_scan));
+                        }
+                        Toast.makeText(HciDebuggerActivity.this, getResources().getString(R.string.toast_scan_stop), Toast.LENGTH_SHORT).show();
                     }
                 });
                 //start discovery detected
@@ -742,8 +749,13 @@ public class HciDebuggerActivity extends BaseActivity implements SwipeRefreshLay
                         if (item != null) {
                             item.setIcon(R.drawable.ic_portable_wifi_off);
                             item.setTitle(getResources().getString(R.string.menu_item_title_stop_scan));
-                            Toast.makeText(HciDebuggerActivity.this, getResources().getString(R.string.toast_scan_start), Toast.LENGTH_SHORT).show();
                         }
+                        item = nvDrawer.getMenu().findItem(R.id.scan_btn_nv);
+                        if (item != null) {
+                            item.setIcon(R.drawable.ic_portable_wifi_off);
+                            item.setTitle(getResources().getString(R.string.menu_item_title_stop_scan));
+                        }
+                        Toast.makeText(HciDebuggerActivity.this, getResources().getString(R.string.toast_scan_start), Toast.LENGTH_SHORT).show();
                     }
                 });
                 //bluetooth state change detected
@@ -854,16 +866,19 @@ public class HciDebuggerActivity extends BaseActivity implements SwipeRefreshLay
         }
 
         //reset snoop file button
-        item = menu.findItem(R.id.reset_snoop_file);
-        if (item != null) {
-            item.setOnMenuItemClickListener(new MenuItem.OnMenuItemClickListener() {
+        if (Build.VERSION.SDK_INT <= 22) {
+            item = menu.findItem(R.id.reset_snoop_file);
+            item.setVisible(true);
+            if (item != null) {
+                item.setOnMenuItemClickListener(new MenuItem.OnMenuItemClickListener() {
 
-                @Override
-                public boolean onMenuItemClick(MenuItem item) {
-                    resetSnoopFile();
-                    return true;
-                }
-            });
+                    @Override
+                    public boolean onMenuItemClick(MenuItem item) {
+                        resetSnoopFile();
+                        return true;
+                    }
+                });
+            }
         }
 
         //filter button
@@ -1174,16 +1189,6 @@ public class HciDebuggerActivity extends BaseActivity implements SwipeRefreshLay
         }
         return false;
     }
-
-    /**
-     * Callback for BLE scan
-     */
-    private BluetoothAdapter.LeScanCallback mLeScanCallback = new BluetoothAdapter.LeScanCallback() {
-        @Override
-        public void onLeScan(final BluetoothDevice device, int rssi, byte[] scanRecord) {
-
-        }
-    };
 
     @Override
     public void onPause() {

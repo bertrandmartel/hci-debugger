@@ -18,6 +18,7 @@
  */
 package com.github.akinaru.hcidebugger.activity;
 
+import android.Manifest;
 import android.app.AlertDialog;
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothManager;
@@ -29,6 +30,7 @@ import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.ServiceConnection;
 import android.content.SharedPreferences;
+import android.content.pm.PackageManager;
 import android.content.res.Configuration;
 import android.os.Build;
 import android.os.Bundle;
@@ -139,6 +141,11 @@ public class HciDebuggerActivity extends BaseActivity implements SwipeRefreshLay
      * define if current configuration is the result of a filter operation or not
      */
     private boolean isFiltered = false;
+
+    /**
+     * request permission code for read external (for sdk 23+)
+     */
+    private final static int REQUEST_PERMISSION_READ_EXTERNAL = 1;
 
     /**
      * total list of HCI packet decoded
@@ -398,14 +405,40 @@ public class HciDebuggerActivity extends BaseActivity implements SwipeRefreshLay
             }
         });
 
+        if (Build.VERSION.SDK_INT >= 23) {
+            if (checkSelfPermission(Manifest.permission.READ_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED) {
+                requestPermissions(new String[]{Manifest.permission.READ_EXTERNAL_STORAGE}, 1);
+            } else {
+                bindService();
+            }
+        } else {
+            bindService();
+        }
+    }
 
+    @Override
+    public void onRequestPermissionsResult(int requestCode,
+                                           String permissions[], int[] grantResults) {
+        switch (requestCode) {
+            case REQUEST_PERMISSION_READ_EXTERNAL: {
+                // If request is cancelled, the result arrays are empty.
+                if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                    bindService();
+                } else {
+                    finish();
+                }
+                return;
+            }
+        }
+    }
+
+
+    private void bindService() {
         Intent intent = new Intent(this, HciDebuggerService.class);
-
         // bind the service to current activity and create it if it didnt exist before
         startService(intent);
         bound = bindService(intent, mServiceConnection, BIND_AUTO_CREATE);
     }
-
 
     public void onResume() {
         super.onResume();

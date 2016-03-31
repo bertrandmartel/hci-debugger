@@ -908,6 +908,7 @@ public class HciDebuggerActivity extends BaseActivity implements SwipeRefreshLay
                     @Override
                     public boolean onMenuItemClick(MenuItem item) {
                         resetSnoopFile();
+                        refresh();
                         return true;
                     }
                 });

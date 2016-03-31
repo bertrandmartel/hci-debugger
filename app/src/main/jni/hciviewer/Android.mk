@@ -5,7 +5,10 @@ include $(CLEAR_VARS)
 LOCAL_MODULE := hciviewer
 
 LOCAL_CFLAGS := -std=gnu++11
+LOCAL_CFLAGS += -funwind-tables -Wl,--no-merge-exidx-entries
 LOCAL_CPPFLAGS += -fexceptions
+
+LOCAL_CFLAGS += -funwind-tables -Wl,--no-merge-exidx-entries
 
 LOCAL_C_INCLUDES := $(LOCAL_PATH)/../btsnoop-decoder/include
 LOCAL_C_INCLUDES += $(LOCAL_PATH)/../hcidecoder/include

@@ -12,6 +12,8 @@ Android application used to decode & display HCI packets
 
 In order to use this application, you have to activate Bluetooth snoop HCI log from developper options
 
+### <a href="CHANGELOG.md">watch change logs</a>
+
 ## Build
 
 ### Get source code

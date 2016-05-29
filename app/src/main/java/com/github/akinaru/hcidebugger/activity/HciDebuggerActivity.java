@@ -228,7 +228,7 @@ public class HciDebuggerActivity extends BaseActivity implements SwipeRefreshLay
         @Override
         public void run() {
 
-            Log.i(TAG, "decoding task");
+            Log.v(TAG, "decoding task");
             runOnUiThread(new Runnable() {
                 @Override
                 public void run() {
@@ -495,6 +495,7 @@ public class HciDebuggerActivity extends BaseActivity implements SwipeRefreshLay
      */
     @Override
     public void toggleScan(MenuItem item) {
+
         if (!mScanning) {
             Log.v(TAG, "starting scan");
             if (!mBluetoothAdapter.isEnabled()) {
@@ -505,16 +506,37 @@ public class HciDebuggerActivity extends BaseActivity implements SwipeRefreshLay
             }
         } else {
             Log.v(TAG, "stopping scan");
-            mBluetoothAdapter.cancelDiscovery();
-            mScanning = false;
-            if (getResources().getConfiguration().orientation == Configuration.ORIENTATION_PORTRAIT) {
-                item.setIcon(R.drawable.ic_looks);
-            } else {
-                item.setIcon(R.drawable.ic_action_scanning);
-            }
-            item.setTitle(getResources().getString(R.string.menu_item_title_start_scan));
-            Toast.makeText(HciDebuggerActivity.this, getResources().getString(R.string.toast_scan_stop), Toast.LENGTH_SHORT).show();
+            stopScan();
         }
+    }
+
+    private void stopScan() {
+
+        runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+                mBluetoothAdapter.cancelDiscovery();
+                mScanning = false;
+
+
+                MenuItem item;
+                if (getResources().getConfiguration().orientation == Configuration.ORIENTATION_PORTRAIT) {
+                    item = nvDrawer.getMenu().findItem(R.id.scan_btn_nv);
+                } else {
+                    item = toolbar.getMenu().findItem(R.id.scan_btn);
+                }
+
+                if (item != null) {
+                    if (getResources().getConfiguration().orientation == Configuration.ORIENTATION_PORTRAIT) {
+                        item.setIcon(R.drawable.ic_looks);
+                    } else {
+                        item.setIcon(R.drawable.ic_action_scanning);
+                    }
+                    item.setTitle(getResources().getString(R.string.menu_item_title_start_scan));
+                }
+                //Toast.makeText(HciDebuggerActivity.this, getResources().getString(R.string.toast_scan_stop), Toast.LENGTH_SHORT).show();
+            }
+        });
     }
 
     @Override
@@ -545,6 +567,10 @@ public class HciDebuggerActivity extends BaseActivity implements SwipeRefreshLay
      */
     private void startScan() {
         mScanning = true;
+
+        if (mBluetoothAdapter.isDiscovering()) {
+            mBluetoothAdapter.cancelDiscovery();
+        }
         mBluetoothAdapter.startDiscovery();
 
         MenuItem item;
@@ -757,22 +783,27 @@ public class HciDebuggerActivity extends BaseActivity implements SwipeRefreshLay
 
             //stop discovery detected
             if (BluetoothAdapter.ACTION_DISCOVERY_FINISHED.equals(action)) {
-                runOnUiThread(new Runnable() {
-                    @Override
-                    public void run() {
-                        MenuItem item = toolbar.getMenu().findItem(R.id.scan_btn);
-                        if (item != null) {
-                            item.setIcon(R.drawable.ic_action_scanning);
-                            item.setTitle(getResources().getString(R.string.menu_item_title_start_scan));
+
+                if (mScanning) {
+                    mBluetoothAdapter.startDiscovery();
+                } else {
+                    runOnUiThread(new Runnable() {
+                        @Override
+                        public void run() {
+                            MenuItem item = toolbar.getMenu().findItem(R.id.scan_btn);
+                            if (item != null) {
+                                item.setIcon(R.drawable.ic_action_scanning);
+                                item.setTitle(getResources().getString(R.string.menu_item_title_start_scan));
+                            }
+                            item = nvDrawer.getMenu().findItem(R.id.scan_btn_nv);
+                            if (item != null) {
+                                item.setIcon(R.drawable.ic_looks);
+                                item.setTitle(getResources().getString(R.string.menu_item_title_start_scan));
+                            }
+                            Toast.makeText(HciDebuggerActivity.this, getResources().getString(R.string.toast_scan_stop), Toast.LENGTH_SHORT).show();
                         }
-                        item = nvDrawer.getMenu().findItem(R.id.scan_btn_nv);
-                        if (item != null) {
-                            item.setIcon(R.drawable.ic_looks);
-                            item.setTitle(getResources().getString(R.string.menu_item_title_start_scan));
-                        }
-                        Toast.makeText(HciDebuggerActivity.this, getResources().getString(R.string.toast_scan_stop), Toast.LENGTH_SHORT).show();
-                    }
-                });
+                    });
+                }
                 //start discovery detected
             } else if (BluetoothAdapter.ACTION_DISCOVERY_STARTED.equals(action)) {
                 runOnUiThread(new Runnable() {
@@ -788,7 +819,7 @@ public class HciDebuggerActivity extends BaseActivity implements SwipeRefreshLay
                             item.setIcon(R.drawable.ic_portable_wifi_off);
                             item.setTitle(getResources().getString(R.string.menu_item_title_stop_scan));
                         }
-                        Toast.makeText(HciDebuggerActivity.this, getResources().getString(R.string.toast_scan_start), Toast.LENGTH_SHORT).show();
+                        //Toast.makeText(HciDebuggerActivity.this, getResources().getString(R.string.toast_scan_start), Toast.LENGTH_SHORT).show();
                     }
                 });
                 //bluetooth state change detected
@@ -1227,6 +1258,7 @@ public class HciDebuggerActivity extends BaseActivity implements SwipeRefreshLay
     @Override
     public void onPause() {
         super.onPause();
+        stopScan();
         unregisterReceiver(mBroadcastReceiver);
     }
 

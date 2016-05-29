@@ -30,6 +30,10 @@
             android:icon="@drawable/ic_view_comfy"
             android:title="@string/menu_title_open_source_components" />
         <item
+            android:id="@+id/rate_app"
+            android:icon="@drawable/ic_star_rate"
+            android:title="@string/rate_app_title" />
+        <item
             android:id="@+id/about_app"
             android:icon="@drawable/ic_info_outline"
             android:title="@string/menu_title_about" />

@@ -79,6 +79,10 @@ public class MenuUtils {
                 d.show();
                 break;
             }
+            case R.id.rate_app: {
+                context.startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse("market://details?id=" + context.getApplicationContext().getPackageName())));
+                break;
+            }
             case R.id.about_app: {
                 AboutDialog dialog = new AboutDialog(context);
                 dialog.show();

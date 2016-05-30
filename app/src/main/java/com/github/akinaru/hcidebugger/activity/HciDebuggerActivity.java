@@ -21,6 +21,7 @@ package com.github.akinaru.hcidebugger.activity;
 import android.Manifest;
 import android.app.AlertDialog;
 import android.bluetooth.BluetoothAdapter;
+import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothManager;
 import android.content.BroadcastReceiver;
 import android.content.ComponentName;
@@ -73,6 +74,7 @@ import com.github.akinaru.hcidebugger.model.PacketHciEvent;
 import com.github.akinaru.hcidebugger.model.PacketHciEventLEMeta;
 import com.github.akinaru.hcidebugger.model.PacketHciLEAdvertizing;
 import com.github.akinaru.hcidebugger.model.PacketHciScoData;
+import com.github.akinaru.hcidebugger.model.ScanType;
 import com.github.akinaru.hcidebugger.model.ValuePair;
 import com.github.akinaru.hcidebugger.service.HciDebuggerService;
 import com.github.akinaru.hcidebugger.service.IDecodingService;
@@ -221,6 +223,17 @@ public class HciDebuggerActivity extends BaseActivity implements SwipeRefreshLay
 
     private boolean mFirstPacketReceived = true;
 
+    private ScanType mScanType = ScanType.CLASSIC_SCAN;
+
+    private static final int REQUEST_PERMISSION_COARSE_LOCATION = 2;
+
+    private BluetoothAdapter.LeScanCallback scanCallback = new BluetoothAdapter.LeScanCallback() {
+        @Override
+        public void onLeScan(BluetoothDevice device, int rssi, byte[] scanRecord) {
+
+        }
+    };
+
     /**
      * task run in a thread to decoded btsnoop file, HCI packets
      */
@@ -333,6 +346,10 @@ public class HciDebuggerActivity extends BaseActivity implements SwipeRefreshLay
         filters.setAddress(prefs.getString(Constants.PREFERENCES_ADVERTISING_ADDR, ""));
         mMaxPacketCount = prefs.getInt(Constants.PREFERENCES_MAX_PACKET_COUNT, Constants.DEFAULT_LAST_PACKET_COUNT);
 
+        mScanType = ScanType.getScanType(prefs.getString(Constants.PREFERENCES_SCAN_TYPE, ""));
+
+        Log.i(TAG, "mScanType : " + mScanType.toString());
+
         // init Bluetooth adapter
         final BluetoothManager bluetoothManager = (BluetoothManager) getSystemService(BLUETOOTH_SERVICE);
         mBluetoothAdapter = bluetoothManager.getAdapter();
@@ -407,7 +424,7 @@ public class HciDebuggerActivity extends BaseActivity implements SwipeRefreshLay
 
         if (Build.VERSION.SDK_INT >= 23) {
             if (checkSelfPermission(Manifest.permission.READ_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED) {
-                requestPermissions(new String[]{Manifest.permission.READ_EXTERNAL_STORAGE}, 1);
+                requestPermissions(new String[]{Manifest.permission.READ_EXTERNAL_STORAGE}, REQUEST_PERMISSION_READ_EXTERNAL);
             } else {
                 bindService();
             }
@@ -427,7 +444,15 @@ public class HciDebuggerActivity extends BaseActivity implements SwipeRefreshLay
                 } else {
                     finish();
                 }
-                return;
+                break;
+            }
+            case REQUEST_PERMISSION_COARSE_LOCATION: {
+                if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                    startBleScan();
+                    startScanSetup();
+                } else {
+                    Toast.makeText(HciDebuggerActivity.this, "permission coarse location required for ble scan", Toast.LENGTH_SHORT).show();
+                }
             }
         }
     }
@@ -512,31 +537,42 @@ public class HciDebuggerActivity extends BaseActivity implements SwipeRefreshLay
 
     private void stopScan() {
 
-        runOnUiThread(new Runnable() {
-            @Override
-            public void run() {
-                mBluetoothAdapter.cancelDiscovery();
-                mScanning = false;
+        if (mScanning) {
+            runOnUiThread(new Runnable() {
+                @Override
+                public void run() {
 
-
-                MenuItem item;
-                if (getResources().getConfiguration().orientation == Configuration.ORIENTATION_PORTRAIT) {
-                    item = nvDrawer.getMenu().findItem(R.id.scan_btn_nv);
-                } else {
-                    item = toolbar.getMenu().findItem(R.id.scan_btn);
-                }
-
-                if (item != null) {
-                    if (getResources().getConfiguration().orientation == Configuration.ORIENTATION_PORTRAIT) {
-                        item.setIcon(R.drawable.ic_looks);
+                    if (mScanType == ScanType.CLASSIC_SCAN) {
+                        mBluetoothAdapter.cancelDiscovery();
                     } else {
-                        item.setIcon(R.drawable.ic_action_scanning);
+                        Toast.makeText(HciDebuggerActivity.this, getResources().getString(R.string.toast_scan_stop), Toast.LENGTH_SHORT).show();
+                        mBluetoothAdapter.stopLeScan(scanCallback);
                     }
-                    item.setTitle(getResources().getString(R.string.menu_item_title_start_scan));
+
+                    mScanning = false;
+
+
+                    MenuItem item;
+                    if (getResources().getConfiguration().orientation == Configuration.ORIENTATION_PORTRAIT) {
+                        item = nvDrawer.getMenu().findItem(R.id.scan_btn_nv);
+                    } else {
+                        item = toolbar.getMenu().findItem(R.id.scan_btn);
+                    }
+
+                    if (item != null) {
+                        if (getResources().getConfiguration().orientation == Configuration.ORIENTATION_PORTRAIT) {
+                            item.setIcon(R.drawable.ic_looks);
+                        } else {
+                            item.setIcon(R.drawable.ic_action_scanning);
+                        }
+                        item.setTitle(getResources().getString(R.string.menu_item_title_start_scan));
+                    }
+                    //Toast.makeText(HciDebuggerActivity.this, getResources().getString(R.string.toast_scan_stop), Toast.LENGTH_SHORT).show();
                 }
-                //Toast.makeText(HciDebuggerActivity.this, getResources().getString(R.string.toast_scan_stop), Toast.LENGTH_SHORT).show();
-            }
-        });
+            });
+        } else {
+            Log.v(TAG, "not scanning");
+        }
     }
 
     @Override
@@ -547,6 +583,12 @@ public class HciDebuggerActivity extends BaseActivity implements SwipeRefreshLay
             toolbar.getMenu().findItem(R.id.state_bt_btn).setVisible(false);
             toolbar.getMenu().findItem(R.id.reset_snoop_file).setVisible(false);
             nvDrawer.getMenu().findItem(R.id.scan_btn_nv).setVisible(true);
+
+            if (mScanType == ScanType.CLASSIC_SCAN) {
+                nvDrawer.getMenu().findItem(R.id.change_settings).setTitle(getString(R.string.scan_settings_type_classic_scan));
+            } else {
+                nvDrawer.getMenu().findItem(R.id.change_settings).setTitle(getString(R.string.scan_settings_type_ble_scan));
+            }
             if (Build.VERSION.SDK_INT <= 22) {
                 nvDrawer.getMenu().findItem(R.id.reset_snoop_file_nv).setVisible(true);
             }
@@ -568,11 +610,26 @@ public class HciDebuggerActivity extends BaseActivity implements SwipeRefreshLay
     private void startScan() {
         mScanning = true;
 
-        if (mBluetoothAdapter.isDiscovering()) {
-            mBluetoothAdapter.cancelDiscovery();
+        if (mScanType == ScanType.CLASSIC_SCAN) {
+            if (mBluetoothAdapter.isDiscovering()) {
+                mBluetoothAdapter.cancelDiscovery();
+            }
+            mBluetoothAdapter.startDiscovery();
+        } else {
+            if (Build.VERSION.SDK_INT >= 23) {
+                if (checkSelfPermission(Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+                    requestPermissions(new String[]{Manifest.permission.ACCESS_COARSE_LOCATION}, REQUEST_PERMISSION_COARSE_LOCATION);
+                    return;
+                } else {
+                    startBleScan();
+                }
+            }
         }
-        mBluetoothAdapter.startDiscovery();
 
+        startScanSetup();
+    }
+
+    private void startScanSetup() {
         MenuItem item;
         if (getResources().getConfiguration().orientation == Configuration.ORIENTATION_PORTRAIT) {
             item = nvDrawer.getMenu().findItem(R.id.scan_btn_nv);
@@ -584,6 +641,11 @@ public class HciDebuggerActivity extends BaseActivity implements SwipeRefreshLay
             item.setTitle(getResources().getString(R.string.menu_item_title_stop_scan));
         }
         Toast.makeText(HciDebuggerActivity.this, getResources().getString(R.string.toast_scan_start), Toast.LENGTH_SHORT).show();
+    }
+
+    private void startBleScan() {
+        mBluetoothAdapter.stopLeScan(scanCallback);
+        mBluetoothAdapter.startLeScan(scanCallback);
     }
 
     /**
@@ -602,6 +664,24 @@ public class HciDebuggerActivity extends BaseActivity implements SwipeRefreshLay
         configSnoopFile(false);
         configSnoopFile(true);
         //refresh();
+    }
+
+    @Override
+    public ScanType getScanType() {
+        return mScanType;
+    }
+
+    @Override
+    public void setScanType(ScanType scanType) {
+        SharedPreferences.Editor editor = getSharedPreferences(Constants.PREFERENCES, MODE_PRIVATE).edit();
+        editor.putString(Constants.PREFERENCES_SCAN_TYPE, scanType.getValue());
+        editor.commit();
+        if (scanType == ScanType.CLASSIC_SCAN) {
+            nvDrawer.getMenu().findItem(R.id.change_settings).setTitle(getResources().getString(R.string.scan_settings_type_classic_scan));
+        } else {
+            nvDrawer.getMenu().findItem(R.id.change_settings).setTitle(getResources().getString(R.string.scan_settings_type_ble_scan));
+        }
+        mScanType = scanType;
     }
 
     /**
@@ -785,7 +865,9 @@ public class HciDebuggerActivity extends BaseActivity implements SwipeRefreshLay
             if (BluetoothAdapter.ACTION_DISCOVERY_FINISHED.equals(action)) {
 
                 if (mScanning) {
-                    mBluetoothAdapter.startDiscovery();
+                    if (mScanType == ScanType.CLASSIC_SCAN) {
+                        mBluetoothAdapter.startDiscovery();
+                    }
                 } else {
                     runOnUiThread(new Runnable() {
                         @Override

@@ -22,6 +22,10 @@
             android:title="@string/menu_title_reset_snoop_file"
             android:visible="false" />
         <item
+            android:id="@+id/change_settings"
+            android:icon="@drawable/ic_settings"
+            android:title="@string/scan_settings_type_classic_scan" />
+        <item
             android:id="@+id/report_bugs"
             android:icon="@drawable/ic_bug_report"
             android:title="@string/menu_title_report_bugs" />

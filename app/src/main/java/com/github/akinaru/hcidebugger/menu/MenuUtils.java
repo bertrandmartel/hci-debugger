@@ -18,7 +18,9 @@
  */
 package com.github.akinaru.hcidebugger.menu;
 
+import android.app.AlertDialog;
 import android.content.Context;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.net.Uri;
 import android.support.v4.widget.DrawerLayout;
@@ -29,6 +31,7 @@ import com.github.akinaru.hcidebugger.dialog.AboutDialog;
 import com.github.akinaru.hcidebugger.dialog.MaxPacketCountDialog;
 import com.github.akinaru.hcidebugger.dialog.OpenSourceItemsDialog;
 import com.github.akinaru.hcidebugger.inter.IHciDebugger;
+import com.github.akinaru.hcidebugger.model.ScanType;
 
 /**
  * Some functions used to manage Menu
@@ -43,7 +46,7 @@ public class MenuUtils {
      * @param menuItem MenuItem object
      * @param mDrawer  navigation drawer
      */
-    public static void selectDrawerItem(MenuItem menuItem, DrawerLayout mDrawer, Context context, IHciDebugger activity) {
+    public static void selectDrawerItem(MenuItem menuItem, DrawerLayout mDrawer, Context context, final IHciDebugger activity) {
 
         switch (menuItem.getItemId()) {
             case R.id.set_max_packet_num: {
@@ -72,6 +75,36 @@ public class MenuUtils {
             }
             case R.id.state_bt_btn_nv: {
                 activity.toggleBtState();
+                break;
+            }
+            case R.id.change_settings: {
+
+                CharSequence[] array = {"Classic/BLE scan", "BLE scan"};
+
+                int indexCheck = 0;
+                if (activity.getScanType() == ScanType.BLE_SCAN) {
+                    indexCheck = 1;
+                }
+
+                new AlertDialog.Builder(context)
+                        .setSingleChoiceItems(array, indexCheck, null)
+                        .setPositiveButton("OK", new DialogInterface.OnClickListener() {
+                            public void onClick(DialogInterface dialog, int whichButton) {
+                                dialog.dismiss();
+                                int selectedPosition = ((AlertDialog) dialog).getListView().getCheckedItemPosition();
+                                if (selectedPosition == 0) {
+                                    activity.setScanType(ScanType.CLASSIC_SCAN);
+                                } else {
+                                    activity.setScanType(ScanType.BLE_SCAN);
+                                }
+                            }
+                        })
+                        .setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
+                            public void onClick(DialogInterface dialog, int whichButton) {
+                                dialog.dismiss();
+                            }
+                        })
+                        .show();
                 break;
             }
             case R.id.open_source_components: {

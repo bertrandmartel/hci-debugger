@@ -21,6 +21,8 @@ package com.github.akinaru.hcidebugger.inter;
 import android.content.Context;
 import android.view.MenuItem;
 
+import com.github.akinaru.hcidebugger.model.ScanType;
+
 /**
  * interface for HCI Debugger main activity
  *
@@ -63,4 +65,18 @@ public interface IHciDebugger {
      * reset Snoop file
      */
     void resetSnoopFile();
+
+    /**
+     * get bluetooth scan type
+     *
+     * @return
+     */
+    ScanType getScanType();
+
+    /**
+     * set bluetooth scan type
+     *
+     * @param bleScan
+     */
+    void setScanType(ScanType bleScan);
 }

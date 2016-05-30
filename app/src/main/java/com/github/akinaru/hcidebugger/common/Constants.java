@@ -32,6 +32,7 @@ public class Constants {
     public final static String PREFERENCES_EVENT_TYPE_FILTER = "eventTypeFilter";
     public final static String PREFERENCES_PACKET_TYPE_FILTER = "packetTypeFilter";
     public final static String PREFERENCES_ADVERTISING_ADDR = "advertizingAddr";
+    public final static String PREFERENCES_SCAN_TYPE = "scanType";
     public final static String PREFERENCES_MAX_PACKET_COUNT = "lastPacketCount";
     public final static String HCI_COMMAND = "COMMAND";
     public final static String HCI_EVENT = "EVENT";

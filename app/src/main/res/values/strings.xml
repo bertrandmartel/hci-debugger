@@ -38,6 +38,7 @@
     <string name="menu_title_bluetooth">disable bluetooth</string>
     <string name="menu_title_reset_snoop_file">reset HCI snoop log</string>
     <string name="scan_settings_type_classic_scan">scan type : Classic/BLE</string>
+    <string name="share_menu_title">share</string>
     <string name="scan_settings_type_ble_scan">scan type : BLE</string>
     <string name="menu_title_report_bugs">Report Bugs</string>
     <string name="rate_app_title">Rate this app</string>

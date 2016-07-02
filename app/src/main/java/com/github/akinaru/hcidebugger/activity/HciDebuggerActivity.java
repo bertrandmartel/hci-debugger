@@ -33,14 +33,17 @@ import android.content.ServiceConnection;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.content.res.Configuration;
+import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.IBinder;
 import android.support.design.widget.FloatingActionButton;
 import android.support.design.widget.NavigationView;
+import android.support.v4.view.MenuItemCompat;
 import android.support.v4.widget.SwipeRefreshLayout;
 import android.support.v7.widget.GridLayoutManager;
 import android.support.v7.widget.LinearLayoutManager;
+import android.support.v7.widget.ShareActionProvider;
 import android.text.Editable;
 import android.text.TextWatcher;
 import android.util.Log;
@@ -227,6 +230,10 @@ public class HciDebuggerActivity extends BaseActivity implements SwipeRefreshLay
 
     private static final int REQUEST_PERMISSION_COARSE_LOCATION = 2;
 
+    private ShareActionProvider mShareActionProvider;
+
+    private Intent mShareIntent = new Intent(Intent.ACTION_SEND);
+
     private BluetoothAdapter.LeScanCallback scanCallback = new BluetoothAdapter.LeScanCallback() {
         @Override
         public void onLeScan(BluetoothDevice device, int rssi, byte[] scanRecord) {
@@ -242,6 +249,7 @@ public class HciDebuggerActivity extends BaseActivity implements SwipeRefreshLay
         public void run() {
 
             Log.v(TAG, "decoding task");
+
             runOnUiThread(new Runnable() {
                 @Override
                 public void run() {
@@ -348,8 +356,6 @@ public class HciDebuggerActivity extends BaseActivity implements SwipeRefreshLay
 
         mScanType = ScanType.getScanType(prefs.getString(Constants.PREFERENCES_SCAN_TYPE, ""));
 
-        Log.i(TAG, "mScanType : " + mScanType.toString());
-
         // init Bluetooth adapter
         final BluetoothManager bluetoothManager = (BluetoothManager) getSystemService(BLUETOOTH_SERVICE);
         mBluetoothAdapter = bluetoothManager.getAdapter();
@@ -448,10 +454,20 @@ public class HciDebuggerActivity extends BaseActivity implements SwipeRefreshLay
             }
             case REQUEST_PERMISSION_COARSE_LOCATION: {
                 if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-                    startBleScan();
-                    startScanSetup();
+                    runOnUiThread(new Runnable() {
+                        @Override
+                        public void run() {
+                            startBleScan();
+                            startScanSetup();
+                        }
+                    });
                 } else {
-                    Toast.makeText(HciDebuggerActivity.this, "permission coarse location required for ble scan", Toast.LENGTH_SHORT).show();
+                    runOnUiThread(new Runnable() {
+                        @Override
+                        public void run() {
+                            Toast.makeText(HciDebuggerActivity.this, "permission coarse location required for ble scan", Toast.LENGTH_SHORT).show();
+                        }
+                    });
                 }
             }
         }
@@ -600,6 +616,7 @@ public class HciDebuggerActivity extends BaseActivity implements SwipeRefreshLay
                 stateBtn.setIcon(R.drawable.ic_bluetooth_disabled);
             }
             stateBtn.setTitle(getResources().getString(R.string.menu_item_title_enable_bluetooth_portrait));
+
         }
         return ret;
     }
@@ -1059,6 +1076,14 @@ public class HciDebuggerActivity extends BaseActivity implements SwipeRefreshLay
             }
         }
 
+        item = menu.findItem(R.id.share);
+
+        if (item != null) {
+            // Fetch and store ShareActionProvider
+            mShareActionProvider = (ShareActionProvider) MenuItemCompat.getActionProvider(item);
+            setSharedIntent();
+        }
+
         return super.onCreateOptionsMenu(menu);
     }
 
@@ -1363,43 +1388,6 @@ public class HciDebuggerActivity extends BaseActivity implements SwipeRefreshLay
     }
 
     /**
-     * Retrieve btsnoop file absolute path from bt_stack.conf file
-     *
-     * @return btsnoop file absolute path
-     */
-    public String getHciLogFilePath() {
-
-        try {
-            FileInputStream fis = new FileInputStream(getResources().getString(R.string.bluetooth_config));
-            InputStreamReader isr = new InputStreamReader(fis);
-            BufferedReader bufferedReader = new BufferedReader(isr);
-            String line;
-            while ((line = bufferedReader.readLine()) != null) {
-
-                if (line.contains(getResources().getString(R.string.bt_config_file_name_filter))) {
-                    if (line.indexOf("=") != -1) {
-                        fis.close();
-                        isr.close();
-                        bufferedReader.close();
-                        return line.substring(line.indexOf("=") + 1);
-                    }
-                }
-            }
-
-            fis.close();
-            isr.close();
-            bufferedReader.close();
-
-        } catch (FileNotFoundException e) {
-            e.printStackTrace();
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-
-        return "";
-    }
-
-    /**
      * callback called from native function when packet count is finished
      *
      * @param packetCount total number of HCI packet available
@@ -1613,6 +1601,13 @@ public class HciDebuggerActivity extends BaseActivity implements SwipeRefreshLay
 
     }
 
+    private void setSharedIntent() {
+        File sharedFile = new File(getHciLogFilePath());
+        mShareIntent.setType("text/plain");
+        mShareIntent.putExtra(Intent.EXTRA_STREAM, Uri.fromFile(sharedFile));
+        mShareActionProvider.setShareIntent(mShareIntent);
+    }
+
     /**
      * Edit frame count text view and refresh adapter
      */
@@ -1638,4 +1633,5 @@ public class HciDebuggerActivity extends BaseActivity implements SwipeRefreshLay
     public void setMaxPacketValue(int maxPacketValue) {
         mMaxPacketCount = maxPacketValue;
     }
+
 }

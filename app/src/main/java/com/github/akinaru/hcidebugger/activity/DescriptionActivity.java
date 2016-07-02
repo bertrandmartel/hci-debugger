@@ -18,8 +18,6 @@
  */
 package com.github.akinaru.hcidebugger.activity;
 
-import android.content.Intent;
-import android.net.Uri;
 import android.os.Bundle;
 import android.support.design.widget.NavigationView;
 import android.support.v4.view.MenuItemCompat;
@@ -39,8 +37,6 @@ import com.github.akinaru.hcidebugger.menu.MenuUtils;
 import org.json.JSONException;
 import org.json.JSONObject;
 
-import java.io.File;
-
 /**
  * Packet description activity
  *
@@ -52,10 +48,6 @@ public class DescriptionActivity extends BaseActivity {
      * fixed description item table
      */
     private TableLayout tablelayout;
-
-    private ShareActionProvider mShareActionProvider;
-
-    private Intent mShareIntent = new Intent(Intent.ACTION_SEND);
 
     protected void onCreate(Bundle savedInstanceState) {
 
@@ -117,7 +109,7 @@ public class DescriptionActivity extends BaseActivity {
     public boolean onCreateOptionsMenu(Menu menu) {
 
         this.getMenuInflater().inflate(R.menu.toolbar_menu, menu);
-        
+
         menu.findItem(R.id.packet_number_entry).setVisible(false);
         menu.findItem(R.id.clear_btn).setVisible(false);
         menu.findItem(R.id.scan_btn).setVisible(false);
@@ -134,13 +126,6 @@ public class DescriptionActivity extends BaseActivity {
         }
 
         return super.onCreateOptionsMenu(menu);
-    }
-
-    private void setSharedIntent() {
-        File sharedFile = new File(getHciLogFilePath());
-        mShareIntent.setType("text/plain");
-        mShareIntent.putExtra(Intent.EXTRA_STREAM, Uri.fromFile(sharedFile));
-        mShareActionProvider.setShareIntent(mShareIntent);
     }
 
     /**

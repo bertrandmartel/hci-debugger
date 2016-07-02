@@ -18,8 +18,13 @@
  */
 package com.github.akinaru.hcidebugger.activity;
 
+import android.content.Intent;
+import android.net.Uri;
 import android.os.Bundle;
 import android.support.design.widget.NavigationView;
+import android.support.v4.view.MenuItemCompat;
+import android.support.v7.widget.ShareActionProvider;
+import android.view.Menu;
 import android.view.MenuItem;
 import android.webkit.WebSettings;
 import android.webkit.WebView;
@@ -34,6 +39,8 @@ import com.github.akinaru.hcidebugger.menu.MenuUtils;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.io.File;
+
 /**
  * Packet description activity
  *
@@ -45,6 +52,10 @@ public class DescriptionActivity extends BaseActivity {
      * fixed description item table
      */
     private TableLayout tablelayout;
+
+    private ShareActionProvider mShareActionProvider;
+
+    private Intent mShareIntent = new Intent(Intent.ACTION_SEND);
 
     protected void onCreate(Bundle savedInstanceState) {
 
@@ -84,9 +95,9 @@ public class DescriptionActivity extends BaseActivity {
         WebSettings webSettings = lWebView.getSettings();
         webSettings.setJavaScriptEnabled(true);
         int spacesToIndentEachLevel = 2;
-        String hciJsonBeautified = "{}";
+        String beautify = "{}";
         try {
-            hciJsonBeautified = new JSONObject(hciPacket).toString(spacesToIndentEachLevel);
+            beautify = new JSONObject(hciPacket).toString(spacesToIndentEachLevel);
         } catch (JSONException e) {
             e.printStackTrace();
         }
@@ -95,11 +106,41 @@ public class DescriptionActivity extends BaseActivity {
                 "<script src=\"highlight.js\"></script>" + "<script>hljs.initHighlightingOnLoad();</script>" +
                 "</HEAD><body>" +
                 "<pre><code class=\"json\">" +
-                hciJsonBeautified +
+                beautify +
                 "</code></pre>" +
                 "</body></HTML>";
 
         lWebView.loadDataWithBaseURL("file:///android_asset/", html, "text/html", "utf-8", null);
+    }
+
+    @Override
+    public boolean onCreateOptionsMenu(Menu menu) {
+
+        this.getMenuInflater().inflate(R.menu.toolbar_menu, menu);
+        
+        menu.findItem(R.id.packet_number_entry).setVisible(false);
+        menu.findItem(R.id.clear_btn).setVisible(false);
+        menu.findItem(R.id.scan_btn).setVisible(false);
+        menu.findItem(R.id.state_bt_btn).setVisible(false);
+        menu.findItem(R.id.reset_snoop_file).setVisible(false);
+        menu.findItem(R.id.filter_btn).setVisible(false);
+        menu.findItem(R.id.refresh).setVisible(false);
+
+        MenuItem item = menu.findItem(R.id.share);
+
+        if (item != null) {
+            mShareActionProvider = (ShareActionProvider) MenuItemCompat.getActionProvider(item);
+            setSharedIntent();
+        }
+
+        return super.onCreateOptionsMenu(menu);
+    }
+
+    private void setSharedIntent() {
+        File sharedFile = new File(getHciLogFilePath());
+        mShareIntent.setType("text/plain");
+        mShareIntent.putExtra(Intent.EXTRA_STREAM, Uri.fromFile(sharedFile));
+        mShareActionProvider.setShareIntent(mShareIntent);
     }
 
     /**

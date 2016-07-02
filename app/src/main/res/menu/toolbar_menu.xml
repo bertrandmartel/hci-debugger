@@ -37,4 +37,9 @@
         android:icon="@drawable/ic_settings_backup_restore"
         android:title="@string/menu_title_refresh"
         app:showAsAction="always" />
+    <item
+        android:id="@+id/share"
+        android:icon="@drawable/ic_action_share"
+        android:title="@string/share_menu_title"
+        app:actionProviderClass="android.support.v7.widget.ShareActionProvider" />
 </menu>

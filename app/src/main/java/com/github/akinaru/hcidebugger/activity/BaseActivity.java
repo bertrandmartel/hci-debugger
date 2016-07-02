@@ -28,6 +28,12 @@ import android.support.v7.widget.Toolbar;
 
 import com.github.akinaru.hcidebugger.R;
 
+import java.io.BufferedReader;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.io.InputStreamReader;
+
 /**
  * Abstract base activity for all activities in HCI Debugger app
  *
@@ -63,6 +69,44 @@ public abstract class BaseActivity extends AppCompatActivity {
         this.layoutId = layoutId;
     }
 
+
+    /**
+     * Retrieve btsnoop file absolute path from bt_stack.conf file
+     *
+     * @return btsnoop file absolute path
+     */
+    public String getHciLogFilePath() {
+
+        try {
+            FileInputStream fis = new FileInputStream(getResources().getString(R.string.bluetooth_config));
+            InputStreamReader isr = new InputStreamReader(fis);
+            BufferedReader bufferedReader = new BufferedReader(isr);
+            String line;
+            while ((line = bufferedReader.readLine()) != null) {
+
+                if (line.contains(getResources().getString(R.string.bt_config_file_name_filter))) {
+                    if (line.indexOf("=") != -1) {
+                        fis.close();
+                        isr.close();
+                        bufferedReader.close();
+                        return line.substring(line.indexOf("=") + 1);
+                    }
+                }
+            }
+
+            fis.close();
+            isr.close();
+            bufferedReader.close();
+
+        } catch (FileNotFoundException e) {
+            e.printStackTrace();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+        return "";
+    }
+    
     @Override
     protected void onCreate(Bundle savedInstanceState) {
 

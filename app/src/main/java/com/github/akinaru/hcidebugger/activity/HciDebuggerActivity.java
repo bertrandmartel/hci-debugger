@@ -33,7 +33,6 @@ import android.content.ServiceConnection;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.content.res.Configuration;
-import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.IBinder;
@@ -88,15 +87,9 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
-import java.io.BufferedReader;
 import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.IOException;
-import java.io.InputStreamReader;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
-import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
@@ -178,11 +171,6 @@ public class HciDebuggerActivity extends BaseActivity implements SwipeRefreshLay
     private boolean startScan = false;
 
     /**
-     * format for date
-     */
-    SimpleDateFormat timestampFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS");
-
-    /**
      * define if float button is targetting a scroll down (false for scroll up)
      */
     private boolean floatBtnDown = true;
@@ -229,10 +217,6 @@ public class HciDebuggerActivity extends BaseActivity implements SwipeRefreshLay
     private ScanType mScanType = ScanType.CLASSIC_SCAN;
 
     private static final int REQUEST_PERMISSION_COARSE_LOCATION = 2;
-
-    private ShareActionProvider mShareActionProvider;
-
-    private Intent mShareIntent = new Intent(Intent.ACTION_SEND);
 
     private BluetoothAdapter.LeScanCallback scanCallback = new BluetoothAdapter.LeScanCallback() {
         @Override
@@ -1599,13 +1583,6 @@ public class HciDebuggerActivity extends BaseActivity implements SwipeRefreshLay
             e.printStackTrace();
         }
 
-    }
-
-    private void setSharedIntent() {
-        File sharedFile = new File(getHciLogFilePath());
-        mShareIntent.setType("text/plain");
-        mShareIntent.putExtra(Intent.EXTRA_STREAM, Uri.fromFile(sharedFile));
-        mShareActionProvider.setShareIntent(mShareIntent);
     }
 
     /**

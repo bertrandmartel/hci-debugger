@@ -18,21 +18,27 @@
  */
 package com.github.akinaru.hcidebugger.activity;
 
+import android.content.Intent;
+import android.net.Uri;
 import android.os.Bundle;
 import android.support.design.widget.NavigationView;
 import android.support.v4.view.GravityCompat;
 import android.support.v4.widget.DrawerLayout;
 import android.support.v7.app.ActionBarDrawerToggle;
 import android.support.v7.app.AppCompatActivity;
+import android.support.v7.widget.ShareActionProvider;
 import android.support.v7.widget.Toolbar;
 
 import com.github.akinaru.hcidebugger.R;
 
 import java.io.BufferedReader;
+import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.text.SimpleDateFormat;
+import java.util.Date;
 
 /**
  * Abstract base activity for all activities in HCI Debugger app
@@ -69,13 +75,20 @@ public abstract class BaseActivity extends AppCompatActivity {
         this.layoutId = layoutId;
     }
 
+    /**
+     * format for date
+     */
+    protected SimpleDateFormat timestampFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS");
+
+    protected ShareActionProvider mShareActionProvider;
+
 
     /**
      * Retrieve btsnoop file absolute path from bt_stack.conf file
      *
      * @return btsnoop file absolute path
      */
-    public String getHciLogFilePath() {
+    protected String getHciLogFilePath() {
 
         try {
             FileInputStream fis = new FileInputStream(getResources().getString(R.string.bluetooth_config));
@@ -106,7 +119,21 @@ public abstract class BaseActivity extends AppCompatActivity {
 
         return "";
     }
-    
+
+    protected void setSharedIntent() {
+        File sharedFile = new File(getHciLogFilePath());
+
+        String object = "HCI report " + timestampFormat.format(new Date().getTime());
+
+        Intent intent = new Intent(Intent.ACTION_SEND);
+        intent.setType("text/plain");
+        intent.putExtra(Intent.EXTRA_SUBJECT, object);
+        intent.putExtra(Intent.EXTRA_TEXT, object);
+        intent.putExtra(Intent.EXTRA_STREAM, Uri.fromFile(sharedFile));
+
+        mShareActionProvider.setShareIntent(intent);
+    }
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
 

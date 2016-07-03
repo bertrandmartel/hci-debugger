@@ -24,6 +24,7 @@
 -dontwarn javax.**
 
 -keep class com.google.gdata.** { *; }
+-keep class android.** { *; }
 
 -keepnames class * implements java.io.Serializable
 

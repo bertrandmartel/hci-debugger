@@ -1,5 +1,11 @@
 # Change Log
 
+## [1.82](https://github.com/akinaru/hci-debugger/tree/1.82) (2016-07-03)
+[Full Changelog](https://github.com/akinaru/hci-debugger/compare/1.81...1.82)
+
+## [1.81](https://github.com/akinaru/hci-debugger/tree/1.81) (2016-07-02)
+[Full Changelog](https://github.com/akinaru/hci-debugger/compare/1.8...1.81)
+
 ## [1.8](https://github.com/akinaru/hci-debugger/tree/1.8) (2016-07-02)
 [Full Changelog](https://github.com/akinaru/hci-debugger/compare/1.7...1.8)
 

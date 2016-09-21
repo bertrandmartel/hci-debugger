@@ -59,6 +59,8 @@ public class DescriptionActivity extends BaseActivity {
 
         //hide max packet count for this activity
         nvDrawer.getMenu().findItem(R.id.set_max_packet_num).setVisible(false);
+        nvDrawer.getMenu().findItem(R.id.browse_file).setVisible(false);
+        nvDrawer.getMenu().findItem(R.id.change_settings).setVisible(false);
 
         //get information sent via intent to be displayed
         String hciPacket = getIntent().getExtras().getString(Constants.INTENT_HCI_PACKET);
@@ -106,6 +108,15 @@ public class DescriptionActivity extends BaseActivity {
     }
 
     @Override
+    protected void onDestroy() {
+        super.onDestroy();
+
+        if (mDialog != null) {
+            mDialog.dismiss();
+        }
+    }
+
+    @Override
     public boolean onCreateOptionsMenu(Menu menu) {
 
         this.getMenuInflater().inflate(R.menu.toolbar_menu, menu);
@@ -139,7 +150,7 @@ public class DescriptionActivity extends BaseActivity {
                 new NavigationView.OnNavigationItemSelectedListener() {
                     @Override
                     public boolean onNavigationItemSelected(MenuItem menuItem) {
-                        MenuUtils.selectDrawerItem(menuItem, mDrawer, DescriptionActivity.this, null);
+                        MenuUtils.selectDrawerItem(menuItem, mDrawer, DescriptionActivity.this, null, DescriptionActivity.this);
                         return true;
                     }
                 });

@@ -162,11 +162,6 @@ public class HciDebuggerActivity extends BaseActivity implements SwipeRefreshLay
     private Filters filters;
 
     /**
-     * shared prefenrence object
-     */
-    private SharedPreferences prefs;
-
-    /**
      * permit to start a scan AFTER enabling bluetooth
      */
     private boolean startScan = false;
@@ -332,8 +327,7 @@ public class HciDebuggerActivity extends BaseActivity implements SwipeRefreshLay
         setupDrawerContent(nvDrawer);
 
         filters = new Filters(this, "", "", "", "", "");
-        //get shared preferences
-        prefs = getSharedPreferences(Constants.PREFERENCES, MODE_PRIVATE);
+
         filters.setPacketType(prefs.getString(Constants.PREFERENCES_PACKET_TYPE_FILTER, ""));
         filters.setEventType(prefs.getString(Constants.PREFERENCES_EVENT_TYPE_FILTER, ""));
         filters.setOgf(prefs.getString(Constants.PREFERENCES_OGF_FILTER, ""));
@@ -679,7 +673,7 @@ public class HciDebuggerActivity extends BaseActivity implements SwipeRefreshLay
 
     @Override
     public void setScanType(ScanType scanType) {
-        SharedPreferences.Editor editor = getSharedPreferences(Constants.PREFERENCES, MODE_PRIVATE).edit();
+        SharedPreferences.Editor editor = prefs.edit();
         editor.putString(Constants.PREFERENCES_SCAN_TYPE, scanType.getValue());
         editor.commit();
         if (scanType == ScanType.CLASSIC_SCAN) {
@@ -699,7 +693,7 @@ public class HciDebuggerActivity extends BaseActivity implements SwipeRefreshLay
     public void setBtSnoopFilePath(String path) {
         mBtSnoopFilePath = path;
         setSharedIntent();
-        SharedPreferences.Editor editor = getSharedPreferences(Constants.PREFERENCES, MODE_PRIVATE).edit();
+        SharedPreferences.Editor editor = prefs.edit();
         editor.putString(Constants.PREFERENCES_BTSNOOP_FILEPATH, mBtSnoopFilePath);
         editor.commit();
         refresh();
@@ -775,7 +769,7 @@ public class HciDebuggerActivity extends BaseActivity implements SwipeRefreshLay
 
                 filters.setAddress(s.toString());
 
-                SharedPreferences.Editor editor = getSharedPreferences(Constants.PREFERENCES, MODE_PRIVATE).edit();
+                SharedPreferences.Editor editor = prefs.edit();
                 editor.putString(Constants.PREFERENCES_ADVERTISING_ADDR, s.toString());
                 editor.commit();
             }
@@ -1239,7 +1233,7 @@ public class HciDebuggerActivity extends BaseActivity implements SwipeRefreshLay
 
                 if (!sItems.getSelectedItem().toString().equals(getResources().getString(R.string.filter_choose))) {
 
-                    SharedPreferences.Editor editor = getSharedPreferences(Constants.PREFERENCES, MODE_PRIVATE).edit();
+                    SharedPreferences.Editor editor = prefs.edit();
 
                     if (ressourceId == R.array.packet_type_array) {
 

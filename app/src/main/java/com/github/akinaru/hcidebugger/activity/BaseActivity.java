@@ -19,6 +19,7 @@
 package com.github.akinaru.hcidebugger.activity;
 
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.net.Uri;
 import android.os.Bundle;
 import android.support.design.widget.NavigationView;
@@ -28,10 +29,9 @@ import android.support.v7.app.ActionBarDrawerToggle;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.ShareActionProvider;
 import android.support.v7.widget.Toolbar;
-import android.util.Log;
-import android.view.View;
 
 import com.github.akinaru.hcidebugger.R;
+import com.github.akinaru.hcidebugger.common.Constants;
 
 import java.io.BufferedReader;
 import java.io.File;
@@ -85,6 +85,11 @@ public abstract class BaseActivity extends AppCompatActivity {
     protected ShareActionProvider mShareActionProvider;
 
     protected String mBtSnoopFilePath;
+
+    /**
+     * shared prefenrence object
+     */
+    protected SharedPreferences prefs;
 
     /**
      * Retrieve btsnoop file absolute path from bt_stack.conf file
@@ -143,6 +148,10 @@ public abstract class BaseActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(layoutId);
 
+        //get shared preferences
+        prefs = getSharedPreferences(Constants.PREFERENCES, MODE_PRIVATE);
+        mBtSnoopFilePath = prefs.getString(Constants.PREFERENCES_BTSNOOP_FILEPATH, getHciLogFilePath());
+
         // setup toolbar
         toolbar = (Toolbar) findViewById(R.id.toolbar_item);
 
@@ -166,7 +175,7 @@ public abstract class BaseActivity extends AppCompatActivity {
      * @return
      */
     private ActionBarDrawerToggle setupDrawerToggle() {
-        return new ActionBarDrawerToggle(this, mDrawer, toolbar, R.string.drawer_open, R.string.drawer_close) ;
+        return new ActionBarDrawerToggle(this, mDrawer, toolbar, R.string.drawer_open, R.string.drawer_close);
     }
 
     /**

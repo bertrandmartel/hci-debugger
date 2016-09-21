@@ -84,6 +84,7 @@ public abstract class BaseActivity extends AppCompatActivity {
 
     protected ShareActionProvider mShareActionProvider;
 
+    protected String mBtSnoopFilePath;
 
     /**
      * Retrieve btsnoop file absolute path from bt_stack.conf file
@@ -123,7 +124,7 @@ public abstract class BaseActivity extends AppCompatActivity {
     }
 
     protected void setSharedIntent() {
-        File sharedFile = new File(getHciLogFilePath());
+        File sharedFile = new File(mBtSnoopFilePath);
 
         String object = "HCI report " + timestampFormat.format(new Date().getTime());
 

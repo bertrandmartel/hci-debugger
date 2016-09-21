@@ -247,23 +247,20 @@ public class HciDebuggerActivity extends BaseActivity implements SwipeRefreshLay
 
             configSnoopFile(true);
 
-            //get btsnoop file
-            String filePath = getHciLogFilePath();
+            File file = new File(mBtSnoopFilePath);
 
-            File file = new File(filePath);
             if (!file.exists()) {
                 resetSnoopFile();
-                filePath = getHciLogFilePath();
-                file = new File(filePath);
+                file = new File(mBtSnoopFilePath);
                 if (!file.exists())
                     showWarningDialog(getResources().getString(R.string.hci_warning));
                 return;
             }
 
             mAllPacketInit = false;
-            if (!filePath.equals("")) {
+            if (!mBtSnoopFilePath.equals("")) {
                 if (service != null) {
-                    service.startHciLogStream(filePath, prefs.getInt(Constants.PREFERENCES_MAX_PACKET_COUNT, Constants.DEFAULT_LAST_PACKET_COUNT));
+                    service.startHciLogStream(mBtSnoopFilePath, prefs.getInt(Constants.PREFERENCES_MAX_PACKET_COUNT, Constants.DEFAULT_LAST_PACKET_COUNT));
                 } else {
                     Log.e(TAG, "error service null");
                 }
@@ -339,6 +336,8 @@ public class HciDebuggerActivity extends BaseActivity implements SwipeRefreshLay
         mMaxPacketCount = prefs.getInt(Constants.PREFERENCES_MAX_PACKET_COUNT, Constants.DEFAULT_LAST_PACKET_COUNT);
 
         mScanType = ScanType.getScanType(prefs.getString(Constants.PREFERENCES_SCAN_TYPE, ""));
+
+        mBtSnoopFilePath = prefs.getString(Constants.PREFERENCES_BTSNOOP_FILEPATH, getHciLogFilePath());
 
         // init Bluetooth adapter
         final BluetoothManager bluetoothManager = (BluetoothManager) getSystemService(BLUETOOTH_SERVICE);
@@ -683,6 +682,26 @@ public class HciDebuggerActivity extends BaseActivity implements SwipeRefreshLay
             nvDrawer.getMenu().findItem(R.id.change_settings).setTitle(getResources().getString(R.string.scan_settings_type_ble_scan));
         }
         mScanType = scanType;
+    }
+
+    @Override
+    public String getBtSnoopFilePath() {
+        return mBtSnoopFilePath;
+    }
+
+    @Override
+    public void setBtSnoopFilePath(String path) {
+        mBtSnoopFilePath = path;
+        setSharedIntent();
+        SharedPreferences.Editor editor = getSharedPreferences(Constants.PREFERENCES, MODE_PRIVATE).edit();
+        editor.putString(Constants.PREFERENCES_BTSNOOP_FILEPATH, mBtSnoopFilePath);
+        editor.commit();
+        refresh();
+    }
+
+    @Override
+    public String getDefaultBtSnoopPath() {
+        return getHciLogFilePath();
     }
 
     /**

@@ -20,6 +20,7 @@ package com.github.akinaru.hcidebugger.activity;
 
 import android.Manifest;
 import android.app.AlertDialog;
+import android.app.Dialog;
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothManager;
@@ -224,6 +225,11 @@ public class HciDebuggerActivity extends BaseActivity implements SwipeRefreshLay
 
         }
     };
+
+    /**
+     * one dialog to show above the activity. We dont want to have multiple Dialog above each other.
+     */
+    private Dialog mDialog;
 
     /**
      * task run in a thread to decoded btsnoop file, HCI packets
@@ -702,6 +708,11 @@ public class HciDebuggerActivity extends BaseActivity implements SwipeRefreshLay
     @Override
     public String getDefaultBtSnoopPath() {
         return getHciLogFilePath();
+    }
+
+    @Override
+    public void setCurrentDialog(Dialog dialog) {
+        mDialog = dialog;
     }
 
     /**
@@ -1376,6 +1387,11 @@ public class HciDebuggerActivity extends BaseActivity implements SwipeRefreshLay
     protected void onDestroy() {
         super.onDestroy();
         Log.v(TAG, "exiting HCI Debugger app");
+
+        if (mDialog != null) {
+            mDialog.dismiss();
+        }
+
         if (service != null) {
             service.stopHciLogStream();
         }

@@ -18,6 +18,7 @@
  */
 package com.github.akinaru.hcidebugger.inter;
 
+import android.app.Dialog;
 import android.content.Context;
 import android.view.MenuItem;
 
@@ -100,4 +101,11 @@ public interface IHciDebugger {
      * @return
      */
     String getDefaultBtSnoopPath();
+
+    /**
+     * set opened dialog in activity
+     *
+     * @param dialog
+     */
+    void setCurrentDialog(Dialog dialog);
 }

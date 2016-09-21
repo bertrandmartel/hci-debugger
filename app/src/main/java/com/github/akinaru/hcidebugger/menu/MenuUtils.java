@@ -19,6 +19,7 @@
 package com.github.akinaru.hcidebugger.menu;
 
 import android.app.AlertDialog;
+import android.app.Dialog;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
@@ -53,6 +54,7 @@ public class MenuUtils {
             case R.id.set_max_packet_num: {
                 if (activity != null) {
                     MaxPacketCountDialog dialog = new MaxPacketCountDialog(activity);
+                    activity.setCurrentDialog(dialog);
                     dialog.show();
                 }
                 break;
@@ -60,6 +62,7 @@ public class MenuUtils {
             case R.id.browse_file: {
                 if (activity != null) {
                     SnoopFileDialog dialog = new SnoopFileDialog(activity);
+                    activity.setCurrentDialog(dialog);
                     dialog.show();
                 }
                 break;
@@ -94,7 +97,7 @@ public class MenuUtils {
                     indexCheck = 1;
                 }
 
-                new AlertDialog.Builder(context)
+                Dialog dialog = new AlertDialog.Builder(context)
                         .setSingleChoiceItems(array, indexCheck, null)
                         .setPositiveButton("OK", new DialogInterface.OnClickListener() {
                             public void onClick(DialogInterface dialog, int whichButton) {
@@ -113,11 +116,13 @@ public class MenuUtils {
                             }
                         })
                         .show();
+                activity.setCurrentDialog(dialog);
                 break;
             }
             case R.id.open_source_components: {
-                OpenSourceItemsDialog d = new OpenSourceItemsDialog(context);
-                d.show();
+                OpenSourceItemsDialog dialog = new OpenSourceItemsDialog(context);
+                activity.setCurrentDialog(dialog);
+                dialog.show();
                 break;
             }
             case R.id.rate_app: {
@@ -126,6 +131,7 @@ public class MenuUtils {
             }
             case R.id.about_app: {
                 AboutDialog dialog = new AboutDialog(context);
+                activity.setCurrentDialog(dialog);
                 dialog.show();
                 break;
             }

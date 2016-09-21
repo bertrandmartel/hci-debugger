@@ -34,6 +34,7 @@ public class Constants {
     public final static String PREFERENCES_ADVERTISING_ADDR = "advertizingAddr";
     public final static String PREFERENCES_SCAN_TYPE = "scanType";
     public final static String PREFERENCES_MAX_PACKET_COUNT = "lastPacketCount";
+    public final static String PREFERENCES_BTSNOOP_FILEPATH = "btsnoopFilePath";
     public final static String HCI_COMMAND = "COMMAND";
     public final static String HCI_EVENT = "EVENT";
     public final static String HCI_LE_META = "LE_META";

@@ -30,6 +30,7 @@ import com.github.akinaru.hcidebugger.R;
 import com.github.akinaru.hcidebugger.dialog.AboutDialog;
 import com.github.akinaru.hcidebugger.dialog.MaxPacketCountDialog;
 import com.github.akinaru.hcidebugger.dialog.OpenSourceItemsDialog;
+import com.github.akinaru.hcidebugger.dialog.SnoopFileDialog;
 import com.github.akinaru.hcidebugger.inter.IHciDebugger;
 import com.github.akinaru.hcidebugger.model.ScanType;
 
@@ -52,6 +53,13 @@ public class MenuUtils {
             case R.id.set_max_packet_num: {
                 if (activity != null) {
                     MaxPacketCountDialog dialog = new MaxPacketCountDialog(activity);
+                    dialog.show();
+                }
+                break;
+            }
+            case R.id.browse_file: {
+                if (activity != null) {
+                    SnoopFileDialog dialog = new SnoopFileDialog(activity);
                     dialog.show();
                 }
                 break;

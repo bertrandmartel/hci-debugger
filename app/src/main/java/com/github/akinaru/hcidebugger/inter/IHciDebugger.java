@@ -79,4 +79,25 @@ public interface IHciDebugger {
      * @param bleScan
      */
     void setScanType(ScanType bleScan);
+
+    /**
+     * get btsnoop file path
+     *
+     * @return
+     */
+    String getBtSnoopFilePath();
+
+    /**
+     * set btsnoopfilepath
+     *
+     * @param path
+     */
+    void setBtSnoopFilePath(String path);
+
+    /**
+     * Retrieve default btsnoop file path
+     *
+     * @return
+     */
+    String getDefaultBtSnoopPath();
 }

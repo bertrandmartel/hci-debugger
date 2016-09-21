@@ -55,4 +55,10 @@
     <string name="filter_dialog_apply">apply</string>
     <string name="filter_dialog_cancel">cancel</string>
     <string name="filter_dialog_device_address">device address</string>
+    <string name="menu_title_browse_snoop_file">browse btsnoop file</string>
+    <string name="configuration_snoopfile_title">Btsnoop file path</string>
+    <string name="cancel_button">cancel</string>
+    <string name="snoop_file_text">file path</string>
+    <string name="browse_file">browse file</string>
+    <string name="default_path">default path</string>
 </resources>

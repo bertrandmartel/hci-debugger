@@ -32,6 +32,7 @@ import com.github.akinaru.hcidebugger.dialog.AboutDialog;
 import com.github.akinaru.hcidebugger.dialog.MaxPacketCountDialog;
 import com.github.akinaru.hcidebugger.dialog.OpenSourceItemsDialog;
 import com.github.akinaru.hcidebugger.dialog.SnoopFileDialog;
+import com.github.akinaru.hcidebugger.inter.IDialog;
 import com.github.akinaru.hcidebugger.inter.IHciDebugger;
 import com.github.akinaru.hcidebugger.model.ScanType;
 
@@ -48,13 +49,13 @@ public class MenuUtils {
      * @param menuItem MenuItem object
      * @param mDrawer  navigation drawer
      */
-    public static void selectDrawerItem(MenuItem menuItem, DrawerLayout mDrawer, Context context, final IHciDebugger activity) {
+    public static void selectDrawerItem(MenuItem menuItem, DrawerLayout mDrawer, Context context, final IHciDebugger activity, IDialog dialogCb) {
 
         switch (menuItem.getItemId()) {
             case R.id.set_max_packet_num: {
                 if (activity != null) {
                     MaxPacketCountDialog dialog = new MaxPacketCountDialog(activity);
-                    activity.setCurrentDialog(dialog);
+                    dialogCb.setCurrentDialog(dialog);
                     dialog.show();
                 }
                 break;
@@ -62,7 +63,7 @@ public class MenuUtils {
             case R.id.browse_file: {
                 if (activity != null) {
                     SnoopFileDialog dialog = new SnoopFileDialog(activity);
-                    activity.setCurrentDialog(dialog);
+                    dialogCb.setCurrentDialog(dialog);
                     dialog.show();
                 }
                 break;
@@ -116,12 +117,12 @@ public class MenuUtils {
                             }
                         })
                         .show();
-                activity.setCurrentDialog(dialog);
+                dialogCb.setCurrentDialog(dialog);
                 break;
             }
             case R.id.open_source_components: {
                 OpenSourceItemsDialog dialog = new OpenSourceItemsDialog(context);
-                activity.setCurrentDialog(dialog);
+                dialogCb.setCurrentDialog(dialog);
                 dialog.show();
                 break;
             }
@@ -131,7 +132,7 @@ public class MenuUtils {
             }
             case R.id.about_app: {
                 AboutDialog dialog = new AboutDialog(context);
-                activity.setCurrentDialog(dialog);
+                dialogCb.setCurrentDialog(dialog);
                 dialog.show();
                 break;
             }

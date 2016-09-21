@@ -18,6 +18,7 @@
  */
 package com.github.akinaru.hcidebugger.activity;
 
+import android.app.Dialog;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.net.Uri;
@@ -32,6 +33,7 @@ import android.support.v7.widget.Toolbar;
 
 import com.github.akinaru.hcidebugger.R;
 import com.github.akinaru.hcidebugger.common.Constants;
+import com.github.akinaru.hcidebugger.inter.IDialog;
 
 import java.io.BufferedReader;
 import java.io.File;
@@ -47,7 +49,7 @@ import java.util.Date;
  *
  * @author Bertrand Martel
  */
-public abstract class BaseActivity extends AppCompatActivity {
+public abstract class BaseActivity extends AppCompatActivity implements IDialog {
 
     protected Toolbar toolbar = null;
 
@@ -90,6 +92,11 @@ public abstract class BaseActivity extends AppCompatActivity {
      * shared prefenrence object
      */
     protected SharedPreferences prefs;
+
+    /**
+     * one dialog to show above the activity. We dont want to have multiple Dialog above each other.
+     */
+    protected Dialog mDialog;
 
     /**
      * Retrieve btsnoop file absolute path from bt_stack.conf file
@@ -199,5 +206,10 @@ public abstract class BaseActivity extends AppCompatActivity {
         } else {
             super.onBackPressed();
         }
+    }
+
+    @Override
+    public void setCurrentDialog(Dialog dialog) {
+        mDialog = dialog;
     }
 }

@@ -7,7 +7,7 @@ Android application used to decode & display HCI packets
 
 [![Download RFdroid from Google Play](http://www.android.com/images/brand/android_app_on_play_large.png)](https://play.google.com/store/apps/details?id=com.github.akinaru.hcidebugger)
 
-![screenshot](img/screen.gif)
+![screenshot](https://github.com/akinaru/hci-debugger/raw/master/img/screen.gif)
 
 In order to use this application, you have to activate Bluetooth snoop HCI log from developper options
 

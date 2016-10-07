@@ -26,3 +26,8 @@ dependencies:
   cache_directories:
     - ~/.m2
     - ~/.gradle
+
+general:
+  branches:
+    ignore:
+      - gh-pages

@@ -6,11 +6,11 @@
     <string name="action_settings">Settings</string>
     <string name="open_source_items">Open Source components</string>
     <string name="about">About</string>
-    <string name="copyright">\u00a9 2017 Bertrand Martel</string>
+    <string name="copyright">\u00a9 2016-2017 Bertrand Martel</string>
     <string name="github_link">https://github.com/bertrandmartel/hci-debugger</string>
     <string name="last_packet_count">Set max visible packet count</string>
     <string name="bluetooth_config">/etc/bluetooth/bt_stack.conf</string>
-    <string name="hci_warning">HCI file is specified but is not present in filesystem. Check in Developper Section that btsnoop file log is activated</string>
+    <string name="hci_warning">HCI file is specified but is not present in filesystem. Check in Developer Section that btsnoop file log is activated</string>
     <string name="error_opening">An error occured while opening snoop log file</string>
     <string name="error_reading">An error occured while reading snoop log file</string>
     <string name="warning_dialog_exit">exit</string>

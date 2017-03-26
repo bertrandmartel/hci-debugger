@@ -6,8 +6,8 @@
     <string name="action_settings">Settings</string>
     <string name="open_source_items">Open Source components</string>
     <string name="about">About</string>
-    <string name="copyright">\u00a9 2016 Bertrand Martel</string>
-    <string name="github_link">https://github.com/akinaru/hci-debugger</string>
+    <string name="copyright">\u00a9 2017 Bertrand Martel</string>
+    <string name="github_link">https://github.com/bertrandmartel/hci-debugger</string>
     <string name="last_packet_count">Set max visible packet count</string>
     <string name="bluetooth_config">/etc/bluetooth/bt_stack.conf</string>
     <string name="hci_warning">HCI file is specified but is not present in filesystem. Check in Developper Section that btsnoop file log is activated</string>
@@ -61,4 +61,5 @@
     <string name="snoop_file_text">file path</string>
     <string name="browse_file">browse file</string>
     <string name="default_path">default path</string>
+    <string name="browse_button">browse snoop file</string>
 </resources>

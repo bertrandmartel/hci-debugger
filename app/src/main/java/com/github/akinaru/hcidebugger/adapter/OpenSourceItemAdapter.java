@@ -36,9 +36,9 @@ public class OpenSourceItemAdapter extends BaseAdapter {
 
     private static final String[][] COMPONENTS = new String[][]{
 
-            {"btsnoop-decoder", "https://github.com/akinaru/btsnoop-decoder"},
+            {"btsnoop-decoder", "https://github.com/bertrandmartel/btsnoop-decoder"},
             {"bluetooth-hci-decoder",
-                    "https://github.com/akinaru/bluetooth-hci-decoder"},
+                    "https://github.com/bertrandmartel/bluetooth-hci-decoder"},
             {"highlight.js",
                     "https://highlightjs.org/"}
     };

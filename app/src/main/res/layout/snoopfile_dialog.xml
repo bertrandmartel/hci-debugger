@@ -16,7 +16,9 @@
     <EditText
         android:id="@+id/snoop_file_edit"
         android:layout_width="fill_parent"
-        android:layout_height="wrap_content" />
+        android:layout_height="wrap_content"
+        android:imeOptions="actionDone"
+        android:singleLine="true" />
 
     <Button
         android:id="@+id/browse_file"

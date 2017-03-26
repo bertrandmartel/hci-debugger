@@ -63,6 +63,7 @@ import com.github.akinaru.hcidebugger.R;
 import com.github.akinaru.hcidebugger.adapter.PacketAdapter;
 import com.github.akinaru.hcidebugger.common.Constants;
 import com.github.akinaru.hcidebugger.common.SimpleDividerItemDecoration;
+import com.github.akinaru.hcidebugger.dialog.SnoopFileDialog;
 import com.github.akinaru.hcidebugger.inter.IHciDebugger;
 import com.github.akinaru.hcidebugger.inter.IViewHolderClickListener;
 import com.github.akinaru.hcidebugger.menu.MenuUtils;
@@ -281,9 +282,9 @@ public class HciDebuggerActivity extends BaseActivity implements SwipeRefreshLay
                     public void onClick(DialogInterface dialog, int which) {
                         switch (which) {
                             case DialogInterface.BUTTON_POSITIVE:
-                                dialog.cancel();
-                                dialog.dismiss();
-                                finish();
+                                SnoopFileDialog dialogBrowse = new SnoopFileDialog(HciDebuggerActivity.this);
+                                setCurrentDialog(dialogBrowse);
+                                dialogBrowse.show();
                                 break;
 
                             case DialogInterface.BUTTON_NEGATIVE:
@@ -296,7 +297,7 @@ public class HciDebuggerActivity extends BaseActivity implements SwipeRefreshLay
                 AlertDialog.Builder builder = new AlertDialog.Builder(HciDebuggerActivity.this);
 
                 builder.setCancelable(false);
-                builder.setMessage(message).setPositiveButton(getResources().getString(R.string.warning_dialog_exit), dialogClickListener)
+                builder.setMessage(message).setPositiveButton(getResources().getString(R.string.browse_button), dialogClickListener)
                         .setNegativeButton(getResources().getString(R.string.warning_dialog_retry), dialogClickListener).show();
             }
         });
